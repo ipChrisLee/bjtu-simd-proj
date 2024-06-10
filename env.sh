@@ -14,10 +14,24 @@ function check_env_var() {
 check_env_var remoteServerUser
 check_env_var remoteServerAddr
 
-if [ -z "$sshCommand" ]; then
-	export sshCommand="ssh"
-fi
-
 if [ -z "$containerName" ]; then
 	export containerName="bjtu-simd-dev"
 fi
+
+export remote="$remoteServerUser@$remoteServerAddr"
+
+function true_ssh() {
+	if [ -z "$proxyJump" ]; then
+		ssh "$remote" "$@"
+	else
+		ssh -o "ProxyJump=$proxyJump" "$remote" "$@"
+	fi
+}
+
+function true_scp() {
+	if [ -z "$proxyJump" ]; then
+		scp "$remote" "$@"
+	else
+		scp -o "ProxyJump=$proxyJump" "$@"
+	fi
+}
