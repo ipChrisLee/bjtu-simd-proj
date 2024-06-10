@@ -4,8 +4,11 @@ RUN mkdir -p /workspace
 
 WORKDIR /workspace
 
-# ------------ install necessary tools ------------
+# ------------ install necessary toolchain ------------
 RUN apt-get update
-RUN apt-get install -y clang python3 python3-pip clangd
+RUN apt-get install -y clang clangd gcc-aarch64-linux-gnu lld
+RUN apt-get install -y python3 python3-pip
 RUN pip3 install cmake
 
+# ------------ install qemu for test ------------
+RUN apt-get install -y qemu qemu-system-arm qemu-efi-aarch64 qemu-efi
