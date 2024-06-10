@@ -16,6 +16,7 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
             },
+            "toolchainFile": "toolchain.cmake",
             "binaryDir": "build-debug",
 			"installDir": "install-debug"
         }
