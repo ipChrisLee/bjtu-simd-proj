@@ -1,0 +1,29 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 29,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "build-debug-conf",
+            "displayName": "Build Debug",
+            "description": "Build with Debug config",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
+            },
+            "binaryDir": "build-debug",
+			"installDir": "install-debug"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-debug",
+            "configurePreset": "build-debug-conf"
+        }
+    ]
+}
