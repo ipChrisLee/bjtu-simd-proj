@@ -1,0 +1,63 @@
+CompileFlags:
+  CompilationDatabase: build-debug
+Diagnostics:
+  ClangTidy:
+    # https://clang.llvm.org/extra/clang-tidy/checks/list.html
+    Add: [performance-*, readability-identifier-*, bugprone-*]
+    Remove: [readability-identifier-length, bugprone-easily-*, bugprone-unchecked-optional-*]
+    CheckOptions:
+      # id-naming
+      # https://clang.llvm.org/extra/clang-tidy/checks/readability/identifier-naming.html
+      readability-identifier-naming.AbstractClassCase: CamelCase
+      readability-identifier-naming.ClassCase: CamelCase
+      readability-identifier-naming.ClassConstantCase: Camel_Snake_Case
+      readability-identifier-naming.ClassMemberCase: camelBack
+      readability-identifier-naming.ClassMethodCase: lower_case
+      readability-identifier-naming.ConstantCase: Camel_Snake_Case
+      readability-identifier-naming.ConstantMemberCase: Camel_Snake_Case
+      readability-identifier-naming.ConstantParameterCase: Camel_Snake_Case
+      readability-identifier-naming.ConstantPointerParameterCase: Camel_Snake_Case
+      readability-identifier-naming.ConstexprFunctionCase: lower_case
+      readability-identifier-naming.ConstexprMethodCase: lower_case
+      readability-identifier-naming.ConstexprVariableCase: Camel_Snake_Case
+      readability-identifier-naming.EnumCase: CamelCase
+      readability-identifier-naming.EnumConstantCase: Camel_Snake_Case
+      readability-identifier-naming.FunctionCase: lower_case
+      readability-identifier-naming.GetConfigPerFile: True
+      readability-identifier-naming.GlobalConstantCase: Camel_Snake_Case
+      readability-identifier-naming.GlobalConstantPointerCase: Camel_Snake_Case
+      readability-identifier-naming.GlobalFunctionCase: lower_case
+      readability-identifier-naming.GlobalPointerCase: camelBack
+      readability-identifier-naming.GlobalVariableCase: camelBack
+      readability-identifier-naming.GlobalVariablePrefix: g_
+      readability-identifier-naming.LocalConstantCase: Camel_Snake_Case
+      readability-identifier-naming.LocalConstantPointerCase: Camel_Snake_Case
+      readability-identifier-naming.LocalPointerCase: camelBack
+      readability-identifier-naming.LocalVariableCase: camelBack
+      readability-identifier-naming.MacroDefinitionCase: lower_case
+      readability-identifier-naming.MemberCase: camelBack
+      readability-identifier-naming.MethodCase: lower_case
+      readability-identifier-naming.NamespaceCase: lower_case
+      readability-identifier-naming.ParameterCase: camelBack
+      readability-identifier-naming.ParameterPackCase: camelBack
+      readability-identifier-naming.PointerParameterCase: camelBack
+      readability-identifier-naming.PrivateMemberCase: camelBack
+      readability-identifier-naming.PrivateMemberSuffix: _
+      readability-identifier-naming.PrivateMethodCase: lower_case
+      readability-identifier-naming.PrivateMethodSuffix: _
+      readability-identifier-naming.ProtectedMemberCase: camelBack
+      readability-identifier-naming.ProtectedMemberSuffix: _
+      readability-identifier-naming.ProtectedMethodCase: lower_case
+      readability-identifier-naming.ProtectedMethodSuffix: _
+      readability-identifier-naming.ScopedEnumConstantCase: Camel_Snake_Case
+      readability-identifier-naming.StaticConstantCase: Camel_Snake_Case
+      readability-identifier-naming.StaticVariableCase: camelBack
+      readability-identifier-naming.StaticVariablePrefix: s_
+      readability-identifier-naming.StructCase: CamelCase
+      readability-identifier-naming.TemplateParameterCase: CamelCase
+      readability-identifier-naming.TemplateTemplateParameterCase: CamelCase
+      readability-identifier-naming.TypeTemplateParameterCase: CamelCase
+      readability-identifier-naming.UnionCase: CamelCase
+      readability-identifier-naming.ValueTemplateParameterCase: Camel_Snake_Case
+      readability-identifier-naming.VariableCase: camelBack
+      readability-identifier-naming.VirtualMethodCase: lower_case
