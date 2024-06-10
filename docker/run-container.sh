@@ -7,5 +7,6 @@ source env.sh
 docker run \
 	--name "${containerName}" \
 	-h "${containerName}" \
+	-v "$(pwd)/code":"/code" \
 	"$@" \
 	-itd "${containerName}_image"
