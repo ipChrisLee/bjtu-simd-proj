@@ -16,15 +16,27 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
             },
-            "toolchainFile": "toolchain.cmake",
             "binaryDir": "build-debug",
 			"installDir": "install-debug"
+        },
+        {
+            "name": "build-debug-dev-conf",
+            "displayName": "Build Debug Dev",
+            "description": "Build with Debug config on Dev",
+            "inherits": "build-debug-conf",
+            "toolchainFile": "toolchain.cmake",
+            "binaryDir": "build-debug-dev",
+			"installDir": "install-debug-dev"
         }
     ],
     "buildPresets": [
         {
             "name": "build-debug",
             "configurePreset": "build-debug-conf"
+        },
+        {
+            "name": "build-debug-dev",
+            "configurePreset": "build-debug-dev-conf"
         }
     ]
 }
