@@ -11,5 +11,10 @@ add_library(clib-simd)
 target_include_directories(clib-simd PUBLIC src/clib/include)
 target_sources(clib-simd PUBLIC src/clib/src-simd/tensor.c)
 
+add_library(tlib)
+target_include_directories(tlib PUBLIC tlib/include)
+target_include_directories(tlib PUBLIC src/clib/include)
+target_sources(tlib PUBLIC tlib/src/test-helper.c tlib/src/test-layer.c)
+
 add_executable(alex-net)
 target_sources(alex-net PUBLIC src/main.c)
