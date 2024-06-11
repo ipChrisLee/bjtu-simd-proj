@@ -35,7 +35,7 @@ void tensor_relu(Tensor * dst, Tensor * src) {
 	int32_t len = tensor_get_len(src);
 	for (int32_t i = 0; i < len; ++i) {
 		float v = src->data[i];
-		v = fminf(v, 0);
+		v = fmaxf(v, 0);
 		dst->data[i] = v;
 	}
 }
@@ -44,7 +44,7 @@ void tensor_relu_inplace(Tensor * op) {
 	int32_t len = tensor_get_len(op);
 	for (int32_t i = 0; i < len; ++i) {
 		float v = op->data[i];
-		v = fminf(v, 0);
+		v = fmaxf(v, 0);
 		op->data[i] = v;
 	}
 }
