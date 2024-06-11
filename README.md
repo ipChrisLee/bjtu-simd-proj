@@ -1,6 +1,6 @@
 # bjtu-simd-proj
 
-## To develop
+## To test on server
 
 Create `secret.sh` in project local, this file should contain:
 
@@ -25,6 +25,26 @@ utils/copy-id-to-server.sh
 Note: this require you have `~/.ssh/id_ed25519.pub` generated. You can use `ssh-keygen -t ed25519` to generate one.
 
 Then you can run `utils/copy-project-to-remote-and-run.sh` to copy project code to server and run it.
+
+## To develop
+
+I have wrapped a docker container for develepment. 
+
+```bash
+# following command should be run at root of project.
+docker/build-image.sh
+docker/run-container.sh
+```
+
+Then you can attach your ide to container (for vscode, use `ms-vscode-remote.remote-containers` is preferred). Code folder is mounted at `/code` inside container. 
+
+For vscode, I have added some suggested plugins in `/code/.vscode/settings.json`, you can install them to have better development experience.
+
+You can also run `docker/goto-container.sh` to bash inside container.
+
+Inside `/code`, you can `utils/build-debug-dev.sh` to build the targets. 
+
+This container has installed qemu, so you can run compiled executable file directly: `build-debug-dev/alex-net`.
 
 ## Thanks
 
