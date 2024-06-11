@@ -1,5 +1,5 @@
 CompileFlags:
-  CompilationDatabase: build-debug
+  CompilationDatabase: build-debug-dev
 Diagnostics:
   ClangTidy:
     # https://clang.llvm.org/extra/clang-tidy/checks/list.html

@@ -1,0 +1,15 @@
+{
+	"clangd.checkUpdates": true,
+	"clangd.arguments": [
+		"--compile-commands-dir=${workspaceFolder}/build-debug-dev/",
+		"--background-index",
+		"-j=12",
+		"--clang-tidy",
+		"--completion-style=detailed",
+		"--header-insertion=iwyu",
+		"--pch-storage=disk"
+	],
+	"editor.tabSize": 4,
+	"editor.insertSpaces": false,
+	"editor.detectIndentation": false
+}
