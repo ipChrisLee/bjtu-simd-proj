@@ -1,5 +1,7 @@
 # alex-net
 
+## alex net structure
+
 [This article](https://zhuanlan.zhihu.com/p/662953988) introduces the structure of alexnet. Core python code is:
 
 ```python
@@ -41,3 +43,7 @@ class AlexNet(nn.Module):
 
 [This article](https://zhuanlan.zhihu.com/p/467017218) also introduces the alexnet, but with detailed info on how every layer constucted, but with little difference. In this article, alex contains LRN layer, which is not mentioned in the previous article.
 
+## some layer intro
+
+* [pytorch conv2d](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html).
+* [pytorch maxpoll](https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html).
