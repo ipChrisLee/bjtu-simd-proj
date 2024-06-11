@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #define MAX_DIM 4
+typedef int32_t DimArray[MAX_DIM];
 
 inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
 	if (dim <= 0 || dim >= MAX_DIM) {
@@ -28,6 +29,9 @@ typedef struct {
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]);
 void tensor_delete(Tensor * p);
 
+// ------------ binary op method ------------
+bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs);
+
 // ------------ member method ------------
 /**
  * @brief copy from src data to dst data. Require data length same, or program will down.
@@ -43,6 +47,14 @@ inline int32_t tensor_get_len(const Tensor * p) {
 		len *= p->shape[i];
 	}
 	return len;
+}
+
+inline void tensor_get_index_by_len(const Tensor * p, int32_t len, int32_t ind[MAX_DIM]) {
+	const int32_t D = p->dim;
+	for (int32_t i = D - 1; i >= 0; --i) {
+		ind[i] = len % p->shape[i];
+		len /= p->shape[i];
+	}
 }
 
 inline bool tensor_is_valid(const Tensor * p) {

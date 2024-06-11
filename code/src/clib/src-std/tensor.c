@@ -27,6 +27,19 @@ void tensor_delete(Tensor * p) {
 	free(p);
 }
 
+bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs) {
+	if (lhs->dim != rhs->dim) {
+		return false;
+	}
+	const int32_t D = lhs->dim;
+	for (int32_t i = 0; i < D; ++i) {
+		if (lhs->shape[i] != rhs->shape[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void tensor_memcpy(Tensor * dst, const Tensor * src) {
 	int32_t lenDst = tensor_get_len(dst);
 	int32_t lenSrc = tensor_get_len(src);
