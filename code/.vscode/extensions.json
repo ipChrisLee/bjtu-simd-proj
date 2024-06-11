@@ -1,6 +1,7 @@
 {
-  "recommendations": [
-    "ms-vscode.cmake-tools",
-    "llvm-vs-code-extensions.vscode-clangd"
-  ]
+	"recommendations": [
+		"ms-vscode.cmake-tools",
+		"llvm-vs-code-extensions.vscode-clangd",
+		"cschlosser.doxdocgen"
+	]
 }
