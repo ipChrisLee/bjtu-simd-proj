@@ -9,7 +9,12 @@
 		"--header-insertion=iwyu",
 		"--pch-storage=disk"
 	],
-	"editor.tabSize": 4,
-	"editor.insertSpaces": false,
-	"editor.detectIndentation": false
+	"[c]": {
+		"editor.tabSize": 4,
+		"editor.insertSpaces": false,
+		"editor.detectIndentation": false,
+	},
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.autopep8",
+	}
 }
