@@ -8,7 +8,7 @@ export layer="$1"
 
 echo "Running for layer {$layer}"
 
-find "unittest/$layer" -type f | while read -r tInfoPath; do
+find "$suitePath/$layer" -type f | while read -r tInfoPath; do
 	echo "Running: \`run-layer-test-std \"$layer\" \"$tInfoPath\"\`"
 	run-layer-test-std "$layer" "$tInfoPath"
 done
