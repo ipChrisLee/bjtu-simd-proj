@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.29)
-project(bjtu-simd-proj)
+project(bjtu-simd-proj C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+link_libraries(m)
 
 add_library(clib-std)
 target_include_directories(clib-std PUBLIC clib/include)
@@ -15,6 +17,8 @@ add_library(tlib)
 target_include_directories(tlib PUBLIC tlib/include)
 target_include_directories(tlib PUBLIC clib/include)
 target_sources(tlib PUBLIC tlib/src/test-helper.c tlib/src/test-layer.c)
+target_link_libraries(tlib PUBLIC clib-std)
 
-add_executable(alex-net)
-target_sources(alex-net PUBLIC src/main.c)
+add_executable(run-layer-test-std)
+target_sources(run-layer-test-std PRIVATE exe/run-layer-test.c)
+target_link_libraries(run-layer-test-std PUBLIC tlib clib-std)
