@@ -2,6 +2,7 @@
 	"recommendations": [
 		"ms-vscode.cmake-tools",
 		"llvm-vs-code-extensions.vscode-clangd",
-		"cschlosser.doxdocgen"
+		"cschlosser.doxdocgen",
+		"ms-vscode.makefile-tools"
 	]
 }
