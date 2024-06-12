@@ -3,6 +3,9 @@
 		"ms-vscode.cmake-tools",
 		"llvm-vs-code-extensions.vscode-clangd",
 		"cschlosser.doxdocgen",
-		"ms-vscode.makefile-tools"
+		"ms-vscode.makefile-tools",
+		"ms-python.python",
+		"ms-python.autopep8",
+		"njpwerner.autodocstring"
 	]
 }
