@@ -16,6 +16,8 @@ Then you can run:
 utils/true-ssh.sh echo y
 ```
 
+WARNING: YOU SHOULD RUN SCRIPTS IN `utils` IN THE ROOT OF THE PROJECT!
+
 This should print y, which is from your server. At this step, you may need to input password, and if you want not to enter password every time, you can run:
 
 ```bash
@@ -35,6 +37,8 @@ I have wrapped a docker container for develepment.
 docker/build-image.sh
 docker/run-container.sh
 ```
+
+WARNING: YOU SHOULD RUN SCRIPTS IN `docker` IN THE ROOT OF THE PROJECT!
 
 Then you can attach your ide to container (for vscode, use `ms-vscode-remote.remote-containers` is preferred). Code folder is mounted at `/code` inside container. 
 
