@@ -3,16 +3,18 @@
 from pathlib import Path
 import sys
 import typing as typ
-from relu import gen_relu
 import numpy as np
 import os
+from relu import gen_relu
+from softmax import gen_softmax
 
 
 def gen_dispatch(layer: str, testPath: Path):
     match layer:
         case "relu":
             gen_relu(testPath)
-            pass
+        case "softmax":
+            gen_softmax(testPath)
         case _:
             raise Exception(f"Unkown layer {layer}")
 
@@ -31,6 +33,6 @@ def gen(suitePath: Path, layerList: typ.List[str], countEveryLayer: int):
 if __name__ == "__main__":
     np.random.seed(42)
     suitePath = Path(sys.argv[1])
-    layerList = ["relu"]
+    layerList = ["relu", "softmax"]
     countEveryLayer = 5
     gen(suitePath=suitePath, layerList=layerList, countEveryLayer=countEveryLayer)
