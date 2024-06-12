@@ -135,77 +135,32 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 	}
 }
 
-/**
- * @brief Get the max val in softmax by dfs.
- */
-static float get_max_val_in_softmax(const Tensor * p, const int32_t D, const int32_t AXIS, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	float maxVal = FLT_MIN;
-	if (curDim == AXIS && curDim == D - 1) {
-		maxVal = *tensor_access_const(p, curIndex);
-	} else if (curDim == AXIS) {
-		maxVal = get_max_val_in_softmax(p, D, AXIS, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			float v = *tensor_access_const(p, curIndex);
-			maxVal = fmaxf(maxVal, v);
+static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray curIndex) {
+	if (curDim == dst->dim) {
+		float maxVal = FLT_MIN;
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			float v = *tensor_access_const(dst, curIndex);
+			maxVal = fmaxf(v, maxVal);
 		}
+		float denominator = 0.0f;
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			float v = *tensor_access_const(dst, curIndex) - maxVal;
+			v = expf(v);
+			*tensor_access(dst, curIndex) = v;
+			denominator += v;
+		}
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			*tensor_access(dst, curIndex) /= denominator;
+		}
+	} else if (curDim == axis) {
+		dfs_for_softmax(dst, curDim + 1, axis, curIndex);
 	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
+		for (int32_t i = 0; i < dst->shape[curDim]; ++i) {
 			curIndex[curDim] = i;
-			float v = get_max_val_in_softmax(p, D, AXIS, curIndex, curDim + 1);
-			maxVal = fmaxf(maxVal, v);
-		}
-	}
-	return maxVal;
-}
-
-/**
- * @brief Get the max val in softmax by dfs.
- */
-static float substract_max_val_and_exp_and_get_denominator_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float MAX_VAL, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	float denominator = 0;
-	if (curDim == AXIS && curDim == D - 1) {
-		float * fp = tensor_access(p, curIndex);
-		*fp -= MAX_VAL;
-		*fp = expf(*fp);
-		denominator += *fp;
-	} else if (curDim == AXIS) {
-		denominator = substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, MAX_VAL, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			float * fp = tensor_access(p, curIndex);
-			*fp -= MAX_VAL;
-			*fp = expf(*fp);
-			denominator += *fp;
-		}
-	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			denominator += substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, MAX_VAL, curIndex, curDim + 1);
-		}
-	}
-	return denominator;
-}
-
-/**
- * @brief Exp and divide
- */
-static void devide_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float DENOMINATOR, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	if (curDim == AXIS && curDim == D - 1) {
-		*tensor_access(p, curIndex) /= DENOMINATOR;
-	} else if (curDim == AXIS) {
-		devide_in_softmax(p, D, AXIS, DENOMINATOR, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			*tensor_access(p, curIndex) /= DENOMINATOR;
-		}
-	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, DENOMINATOR, curIndex, curDim + 1);
+			dfs_for_softmax(dst, curDim + 1, axis, curIndex);
 		}
 	}
 }
@@ -216,10 +171,5 @@ void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis) {
 	const int32_t D = src->dim;
 	const int32_t L = src->shape[axis];
 	int32_t curIndex[MAX_DIM] = {};
-	for (int32_t l = 0; l < L; ++l) {
-		curIndex[axis] = l;
-		float maxVal = get_max_val_in_softmax(src, D, axis, curIndex, 0);
-		float denominator = substract_max_val_and_exp_and_get_denominator_in_softmax(dst, D, axis, maxVal, curIndex, 0);
-		devide_in_softmax(dst, D, axis, denominator, curIndex, 0);
-	}
+	dfs_for_softmax(dst, 0, axis, curIndex);
 }
