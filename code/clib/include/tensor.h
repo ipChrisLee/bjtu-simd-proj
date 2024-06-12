@@ -8,7 +8,7 @@
 typedef int32_t DimArray[MAX_DIM];
 
 static inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
-	if (dim <= 0 || dim >= MAX_DIM) {
+	if (dim <= 0 || dim > MAX_DIM) {
 		return false;
 	}
 	for (int32_t i = 0; i < dim; ++i) {
@@ -58,7 +58,7 @@ static inline void tensor_get_index_by_len(const Tensor * p, int32_t len, int32_
 }
 
 static inline bool tensor_is_valid(const Tensor * p) {
-	if (p->dim < 0 || p->dim >= MAX_DIM) {
+	if (p->dim < 0 || p->dim > MAX_DIM) {
 		return false;
 	}
 	for (int32_t i = 0; i < p->dim; ++i) {

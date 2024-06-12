@@ -22,7 +22,7 @@ void test_result_info_delete(TestResultInfo * p) {
 static Tensor * read_tensor(FILE * fp, Msg_t * msg) {
 	int32_t dim;
 	fscanf(fp, "%" PRId32, &dim);
-	if (dim < 0 || dim >= MAX_DIM) {
+	if (dim < 0 || dim > MAX_DIM) {
 		if (msg) *msg = "read_tensor: dim is not in legal range.";
 		return NULL;
 	}
