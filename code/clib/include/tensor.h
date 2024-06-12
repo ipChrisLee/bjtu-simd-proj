@@ -7,7 +7,7 @@
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
 
-inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
+static inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
 	if (dim <= 0 || dim >= MAX_DIM) {
 		return false;
 	}
@@ -41,7 +41,7 @@ bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs);
  */
 void tensor_memcpy(Tensor * dst, const Tensor * src);
 
-inline int32_t tensor_get_len(const Tensor * p) {
+static inline int32_t tensor_get_len(const Tensor * p) {
 	int32_t len = 1;
 	for (int32_t i = 0; i < p->dim; ++i) {
 		len *= p->shape[i];
@@ -49,7 +49,7 @@ inline int32_t tensor_get_len(const Tensor * p) {
 	return len;
 }
 
-inline void tensor_get_index_by_len(const Tensor * p, int32_t len, int32_t ind[MAX_DIM]) {
+static inline void tensor_get_index_by_len(const Tensor * p, int32_t len, int32_t ind[MAX_DIM]) {
 	const int32_t D = p->dim;
 	for (int32_t i = D - 1; i >= 0; --i) {
 		ind[i] = len % p->shape[i];
@@ -57,19 +57,19 @@ inline void tensor_get_index_by_len(const Tensor * p, int32_t len, int32_t ind[M
 	}
 }
 
-inline bool tensor_is_valid(const Tensor * p) {
+static inline bool tensor_is_valid(const Tensor * p) {
 	if (p->dim < 0 || p->dim >= MAX_DIM) {
 		return false;
 	}
 	for (int32_t i = 0; i < p->dim; ++i) {
-		if (p->data[i] <= 0) {
+		if (p->shape[i] <= 0) {
 			return false;
 		}
 	}
 	return true;
 }
 
-inline const float * tensor_access_const(const Tensor * p, const int32_t ind[MAX_DIM]) {
+static inline const float * tensor_access_const(const Tensor * p, const int32_t ind[MAX_DIM]) {
 	int32_t pos = 0, step = 1;
 	for (int32_t i = p->dim - 1; i >= 0; --i) {
 		pos += ind[i] * step;
@@ -78,7 +78,7 @@ inline const float * tensor_access_const(const Tensor * p, const int32_t ind[MAX
 	return (p->data) + pos;
 }
 
-inline float * tensor_access(Tensor * p, const int32_t ind[MAX_DIM]) {
+static inline float * tensor_access(Tensor * p, const int32_t ind[MAX_DIM]) {
 	int32_t pos = 0, step = 1;
 	for (int32_t i = p->dim - 1; i >= 0; --i) {
 		pos += ind[i] * step;
@@ -87,7 +87,7 @@ inline float * tensor_access(Tensor * p, const int32_t ind[MAX_DIM]) {
 	return (p->data) + pos;
 }
 
-inline float tensor_get_or_default_const(const Tensor * p, const int32_t ind[MAX_DIM], float defaultVal) {
+static inline float tensor_get_or_default_const(const Tensor * p, const int32_t ind[MAX_DIM], float defaultVal) {
 	int32_t pos = 0, step = 1;
 	for (int32_t i = p->dim - 1; i >= 0; --i) {
 		if (ind[i] >= p->shape[i] || ind[i] < 0) {
@@ -104,7 +104,7 @@ inline float tensor_get_or_default_const(const Tensor * p, const int32_t ind[MAX
  */
 void tensor_relu(Tensor * dst, const Tensor * src);
 
-inline void tensor_relu_check(Tensor * dst, const Tensor * src) {
+static inline void tensor_relu_check(Tensor * dst, const Tensor * src) {
 	assert(tensor_is_valid(dst) && "Relu dst is not valid.");
 	assert(tensor_is_valid(src) && "Relu src is not valid.");
 	assert(dst->dim == src->dim && "Relu, src and dst should have same shape.");
@@ -118,7 +118,7 @@ inline void tensor_relu_check(Tensor * dst, const Tensor * src) {
  */
 void tensor_relu_inplace(Tensor * op);
 
-inline void tensor_relu_inplace_check(Tensor * op) {
+static inline void tensor_relu_inplace_check(Tensor * op) {
 	assert(tensor_is_valid(op) && "ReluInplace op is not valid.");
 }
 
@@ -136,7 +136,7 @@ inline void tensor_relu_inplace_check(Tensor * op) {
  */
 void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]);
 
-inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
 	assert(tensor_is_valid(dst) && "Conv2d dst is not valid.");
 	assert(tensor_is_valid(src) && "Conv2d src is not valid.");
 	assert(tensor_is_valid(kernel) && "Conv2d dst is not valid.");
@@ -166,7 +166,7 @@ inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor *
  */
 void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]);
 
-inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
+static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
 	assert(tensor_is_valid(dst) && "MaxPool2d dst is not valid.");
 	assert(tensor_is_valid(src) && "MaxPool2d src is not valid.");
 	assert(dst->dim == 4 && "MaxPool2d only supports 4 dim dst.");
@@ -186,7 +186,7 @@ inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32
  */
 void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis);
 
-inline void tensor_softmax_check(Tensor * dst, const Tensor * src, int32_t axis) {
+static inline void tensor_softmax_check(Tensor * dst, const Tensor * src, int32_t axis) {
 	assert(tensor_is_valid(dst) && "Softmax dst is not valid.");
 	assert(tensor_is_valid(src) && "Softmax src is not valid.");
 	assert(dst->dim == src->dim && "Softmax, src and dst should have same shape.");

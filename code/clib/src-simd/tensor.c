@@ -1,6 +1,7 @@
 #include "tensor.h"
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -16,7 +17,7 @@ static int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
 }
 
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
-	size_t memToUse = sizeof(Tensor) + (uint32_t) get_len_from_shape(dim, shape);
+	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
 	p->dim = dim;
 	memcpy(p->shape, shape, sizeof(p->shape));
@@ -124,7 +125,7 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 /**
  * @brief Get the max val in softmax by dfs.
  */
-inline float get_max_val_in_softmax(const Tensor * p, const int32_t D, const int32_t AXIS, int32_t curIndex[MAX_DIM], int32_t curDim) {
+static float get_max_val_in_softmax(const Tensor * p, const int32_t D, const int32_t AXIS, int32_t curIndex[MAX_DIM], int32_t curDim) {
 	float maxVal = FLT_MIN;
 	if (curDim == AXIS && curDim == D - 1) {
 		maxVal = *tensor_access_const(p, curIndex);
@@ -149,7 +150,7 @@ inline float get_max_val_in_softmax(const Tensor * p, const int32_t D, const int
 /**
  * @brief Get the max val in softmax by dfs.
  */
-inline float substract_max_val_and_exp_and_get_denominator_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float MAX_VAL, int32_t curIndex[MAX_DIM], int32_t curDim) {
+static float substract_max_val_and_exp_and_get_denominator_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float MAX_VAL, int32_t curIndex[MAX_DIM], int32_t curDim) {
 	float denominator = 0;
 	if (curDim == AXIS && curDim == D - 1) {
 		float * fp = tensor_access(p, curIndex);
@@ -178,7 +179,7 @@ inline float substract_max_val_and_exp_and_get_denominator_in_softmax(Tensor * p
 /**
  * @brief Exp and divide
  */
-inline void devide_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float DENOMINATOR, int32_t curIndex[MAX_DIM], int32_t curDim) {
+static void devide_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float DENOMINATOR, int32_t curIndex[MAX_DIM], int32_t curDim) {
 	if (curDim == AXIS && curDim == D - 1) {
 		*tensor_access(p, curIndex) /= DENOMINATOR;
 	} else if (curDim == AXIS) {

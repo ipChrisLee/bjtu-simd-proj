@@ -19,7 +19,7 @@ void test_result_info_delete(TestResultInfo * p) {
 	free(p);
 }
 
-inline Tensor * read_tensor(FILE * fp, Msg_t * msg) {
+static Tensor * read_tensor(FILE * fp, Msg_t * msg) {
 	int32_t dim;
 	fscanf(fp, "%" PRId32, &dim);
 	if (dim < 0 || dim >= MAX_DIM) {
@@ -38,7 +38,7 @@ inline Tensor * read_tensor(FILE * fp, Msg_t * msg) {
 	return p;
 }
 
-inline DimArray * read_dim_array(FILE * fp, Msg_t * msg) {
+static DimArray * read_dim_array(FILE * fp, Msg_t * msg) {
 	DimArray * a = malloc(sizeof(DimArray));
 	for (int32_t i = 0; i < MAX_DIM; ++i) {
 		fscanf(fp, "%" PRId32, (*a) + i);
@@ -46,13 +46,13 @@ inline DimArray * read_dim_array(FILE * fp, Msg_t * msg) {
 	return a;
 }
 
-inline int32_t * read_i32(FILE * fp, Msg_t * msg) {
+static int32_t * read_i32(FILE * fp, Msg_t * msg) {
 	int32_t * a = malloc(sizeof(int32_t));
 	fscanf(fp, "%" PRId32, a);
 	return a;
 }
 
-inline float * read_f32(FILE * fp, Msg_t * msg) {
+static float * read_f32(FILE * fp, Msg_t * msg) {
 	float * f = malloc(sizeof(float));
 	fscanf(fp, "%f", f);
 	return f;
@@ -77,7 +77,8 @@ TestInfo * test_info_read_from(const char * filePath, Msg_t * msg) {
 	while (true) {
 		fscanf(fp, "%s", s_buffer);
 		// clang-format off
-		if (false) {
+		if (strcmp("end", s_buffer) == 0) {
+			break;
 		}
 		process_part(src, tensor)
 		process_part(goldenDst, tensor)
@@ -89,7 +90,8 @@ TestInfo * test_info_read_from(const char * filePath, Msg_t * msg) {
 		process_part(atol, f32)
 		process_part(rtol, f32)
 		else {
-			assert(0 && "Unimplement field process.");
+			*msg = "Can't get field in tInfo.";
+			goto read_fail;
 		}
 		// clang-format on
 	}
