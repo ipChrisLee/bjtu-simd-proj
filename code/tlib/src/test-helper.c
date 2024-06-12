@@ -145,7 +145,6 @@ const char * tensor_compare_result_str(TensorCompareResult tensorCompareResult) 
 }
 
 TensorCompareResult tensor_compare_passed(const Tensor * dst, const Tensor * goldenDst, float * rtol, float * atol, DimArray * diffOn) {
-	assert(diffOn == NULL && "tensor_compare_passed: diffOn != NULL is to be supported.");
 	if (!tensor_same_shape(dst, goldenDst)) {
 		return Diff_On_Shape;
 	}
@@ -156,6 +155,9 @@ TensorCompareResult tensor_compare_passed(const Tensor * dst, const Tensor * gol
 		float c = dst->data[i];
 		float g = goldenDst->data[i];
 		if (fabsf(c - g) > ATOL + RTOL * fabsf(g)) {
+			if (diffOn != NULL) {
+				tensor_get_index_by_len(dst, i, *diffOn);
+			}
 			return Out_Of_Tol;
 		}
 	}

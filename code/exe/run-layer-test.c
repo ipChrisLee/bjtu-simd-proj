@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "test-helper.h"
 #include "test-layer.h"
@@ -24,7 +25,22 @@ int main(int argc, char const ** argv) {
 	}
 
 	TestResultInfo * result = test_result_info_new();
-	test_relu(result, tInfo);
+#define concat(x, y) x##y
+#define layerCase(layer) \
+	else if (strcmp(layerName, #layer) == 0) { concat(test_, layer)(result, tInfo); }
+
+	// clang-format off
+	if(false){
+
+	}
+	layerCase(relu)
+	layerCase(softmax)
+	else {
+		printf(RED "Unsupported layer %s\n" NC, layerName);
+		exit(EXIT_FAILURE);
+	}
+	// clang-format on
+
 	if (result->testResult != Test_Passed) {
 		printf(RED "Test failed when comparing, with info {%s}.\n" NC, result->info);
 		exit(EXIT_FAILURE);
