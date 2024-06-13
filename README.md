@@ -57,6 +57,7 @@ This container has installed qemu, so you can run compiled executable file direc
 * [This wiki article](https://www.armadeus.org/wiki/index.php?title=NEON_HelloWorld) for neon demo.
 * [This answer in stackoverflow](https://stackoverflow.com/a/46811527/17924585) for help on how to static link library.
 * [This blog](https://ughe.github.io/2018/07/19/qemu-aarch64) for help on how to run elf in qemu-aarch64 when dynamic linking failed.
+* [neon intrinsic doc](https://developer.arm.com/architectures/instruction-sets/intrinsics/).
 
 ## High light
 
