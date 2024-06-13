@@ -70,4 +70,5 @@ This container has installed qemu, so you can run compiled executable file direc
 
 ## simd speedup
 
-* After simd relu: 83s => 83s
+* After simd relu: 12s => 12s
+* After simd fc: 12s => 11s

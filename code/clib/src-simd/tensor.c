@@ -13,6 +13,11 @@ static inline int32_t r4(int32_t x) {
 	return (x) & (int32_t) 0xFFFFFFFC;
 }
 
+static inline float reduce_sum(float32x4_t f) {
+	float32x2_t r = vadd_f32(vget_high_f32(f), vget_low_f32(f));
+	return vget_lane_f32(vpadd_f32(r, r), 0);
+}
+
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -203,13 +208,22 @@ static void dfs_for_fc(Tensor * dst, const Tensor * src, const Tensor * weight, 
 		const float * weightValPtr = weight->data;
 		float * dstValPtr = tensor_access(dst, curIndex);
 		for (int32_t i = 0; i < dstDimLen; ++i, ++dstValPtr) {
-			float s = 0;
+			float32x4_t vs = vdupq_n_f32(0.0f);
 			const float * srcValPtr = srcValPtrBase;
-			for (int32_t j = 0; j < srcDimLen; ++j, ++srcValPtr, ++weightValPtr) {
+			for (int32_t j = 0; j + 4 <= srcDimLen; j += 4, srcValPtr += 4, weightValPtr += 4) {
+				float32x4_t srcVal = vld1q_f32(srcValPtr);
+				float32x4_t weightVal = vld1q_f32(weightValPtr);
+				float32x4_t mulRes = vmulxq_f32(srcVal, weightVal);
+				vs = vaddq_f32(vs, mulRes);
+			}
+			float s = 0;
+			for (int32_t j = r4(srcDimLen); j < srcDimLen; ++j, ++srcValPtr, ++weightValPtr) {
 				float srcVal = *srcValPtr;
 				float weightVal = *weightValPtr;
-				s += srcVal * weightVal;
+				float mulRes = srcVal * weightVal;
+				s += mulRes;
 			}
+			s += reduce_sum(vs);
 			*dstValPtr = s;
 		}
 	} else {
