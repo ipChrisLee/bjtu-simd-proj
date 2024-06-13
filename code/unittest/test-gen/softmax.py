@@ -8,9 +8,10 @@ import torch
 
 def gen_softmax(tInfoPath: Path):
     print(tInfoPath)
-    srcShape = lib.gen_random_dim_array(l=2, r=5)
+    D = lib.gen_rand_dim(d=4) + 1
+    srcShape = lib.gen_random_dim_array(d=D, l=10, r=15)
     src = lib.gen_uniform_tensor(srcShape, (-1.0, 1.0))
-    axis = lib.gen_rand_dim()
+    axis = lib.gen_rand_dim(D)
     goldenDst = torch.softmax(input=torch.tensor(src), dim=axis)
     lib.dump(tInfoPath=tInfoPath, src=src, goldenDst=goldenDst,
              axis=axis, atol=1e-3, rtol=1e-2)

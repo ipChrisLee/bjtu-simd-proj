@@ -19,6 +19,17 @@ def _write_tensor(name: str, fp: TextIOWrapper, tensor: np.ndarray | None):
     fp.write("\n")
 
 
+def _write_intarr(name: str, fp: TextIOWrapper, arr: typ.List[int] | None):
+    if arr is None:
+        return
+    fp.write(f"{name} ")
+    L = len(arr)
+    fp.write(f"{L} ")
+    for l in arr:
+        fp.write(f"{l} ")
+    fp.write("\n")
+
+
 def _write_axis(fp: TextIOWrapper, axis: int | None = None):
     if axis is None:
         return
@@ -36,6 +47,8 @@ def dump(
         src: np.ndarray | None = None,
         goldenDst: np.ndarray | None = None,
         kernel: np.ndarray | None = None,
+        padding: typ.List[int] | None = None,
+        stride: typ.List[int] | None = None,
         axis: int | None = None,
         rtol: float | None = None,
         atol: float | None = None
@@ -47,6 +60,8 @@ def dump(
     _write_axis(fp, axis)
     _write_tol(fp, "rtol", rtol)
     _write_tol(fp, "atol", atol)
+    _write_intarr("padding", fp, padding)
+    _write_intarr("stride", fp, stride)
     fp.write("end\n")
     fp.close()
 
