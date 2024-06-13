@@ -11,3 +11,8 @@ else
     utils/build-debug.sh
     export PATH="$PATH:$(pwd)/build-debug"
 fi
+
+# build-debug-dev: cross compile to arm arch.
+# build-debug: local host compile.
+# *-std: standard version.
+# *-simd: simd version.
