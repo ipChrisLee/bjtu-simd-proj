@@ -7,6 +7,11 @@
 #include <assert.h>
 #include <math.h>
 #include <float.h>
+#include <arm_neon.h>
+
+static inline int32_t r4(int32_t x) {
+	return (x) & (int32_t) 0xFFFFFFFC;
+}
 
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
@@ -54,20 +59,32 @@ void tensor_memcpy(Tensor * dst, const Tensor * src) {
 
 void tensor_relu(Tensor * dst, const Tensor * src) {
 	tensor_relu_check(dst, src);
-	int32_t len = tensor_get_len(src);
-	for (int32_t i = 0; i < len; ++i) {
+	const int32_t Len = tensor_get_len(src);
+	float32x4_t zero = vdupq_n_f32(0.0f);
+	for (int32_t i = 0; i + 4 <= Len; i += 4) {
+		float32x4_t v = vld1q_f32(src->data + i);
+		v = vmaxnmq_f32(v, zero);
+		vst1q_f32(dst->data + i, v);
+	}
+	for (int32_t i = r4(Len); i < Len; ++i) {
 		float v = src->data[i];
-		v = fmaxf(v, 0);
+		v = fmaxf(v, 0.0f);
 		dst->data[i] = v;
 	}
 }
 
 void tensor_relu_inplace(Tensor * op) {
 	tensor_relu_inplace_check(op);
-	int32_t len = tensor_get_len(op);
-	for (int32_t i = 0; i < len; ++i) {
+	const int32_t Len = tensor_get_len(op);
+	float32x4_t zero = vdupq_n_f32(0.0f);
+	for (int32_t i = 0; i + 4 <= Len; i += 4) {
+		float32x4_t v = vld1q_f32(op->data + i);
+		v = vmaxnmq_f32(v, zero);
+		vst1q_f32(op->data + i, v);
+	}
+	for (int32_t i = r4(Len); i < Len; ++i) {
 		float v = op->data[i];
-		v = fmaxf(v, 0);
+		v = fmaxf(v, 0.0f);
 		op->data[i] = v;
 	}
 }
