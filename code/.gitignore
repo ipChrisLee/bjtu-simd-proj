@@ -1,4 +1,6 @@
-build*
+build-debug
+build-debug-dev
+build-release
 CMakeUserPresets.json
 qemu*
 workspace*
