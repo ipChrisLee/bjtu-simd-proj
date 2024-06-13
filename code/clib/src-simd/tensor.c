@@ -18,6 +18,11 @@ static inline float reduce_sum(float32x4_t f) {
 	return vget_lane_f32(vpadd_f32(r, r), 0);
 }
 
+static inline float reduce_max(float32x4_t f) {
+	float32x2_t r = vmax_f32(vget_high_f32(f), vget_low_f32(f));
+	return vget_lane_f32(vpmax_f32(r, r), 0);
+}
+
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -163,23 +168,64 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 
 static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray curIndex) {
 	if (curDim == dst->dim) {
-		float maxVal = FLT_MIN;
-		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
-			curIndex[axis] = i;
-			float v = *tensor_access_const(dst, curIndex);
-			maxVal = fmaxf(v, maxVal);
-		}
-		float denominator = 0.0f;
-		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
-			curIndex[axis] = i;
-			float v = *tensor_access_const(dst, curIndex) - maxVal;
-			v = expf(v);
-			*tensor_access(dst, curIndex) = v;
-			denominator += v;
-		}
-		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
-			curIndex[axis] = i;
-			*tensor_access(dst, curIndex) /= denominator;
+		if (axis == dst->dim - 1) {
+			const int32_t L = dst->shape[axis];
+			curIndex[axis] = 0;
+			float * dstValPtrBase = tensor_access(dst, curIndex);
+			float * dstValPtr;
+
+			float32x4_t maxValVec = vdupq_n_f32(FLT_MIN);
+			dstValPtr = dstValPtrBase;
+			for (int32_t i = 0; i + 4 <= L; i += 4, dstValPtr += 4) {
+				float32x4_t v = vld1q_f32(dstValPtr);
+				maxValVec = vmaxnmq_f32(maxValVec, v);
+			}
+			float maxVal = reduce_max(maxValVec);
+			for (int32_t i = r4(L); i < L; ++i, ++dstValPtr) {
+				float v = *dstValPtr;
+				maxVal = fmaxf(maxVal, v);
+			}
+
+			float denominator = 0.0f;
+			dstValPtr = dstValPtrBase;
+			for (int32_t i = 0; i < L; ++i, ++dstValPtr) {
+				float v = *dstValPtr;
+				v = expf(v - maxVal);
+				*dstValPtr = v;
+				denominator += v;
+			}
+
+			const float32x4_t Denom_Val_Vec = vdupq_n_f32(denominator);
+			dstValPtr = dstValPtrBase;
+			for (int32_t i = 0; i + 4 <= L; i += 4, dstValPtr += 4) {
+				float32x4_t v = vld1q_f32(dstValPtr);
+				v = vdivq_f32(v, Denom_Val_Vec);
+				vst1q_f32(dstValPtr, v);
+			}
+			for (int32_t i = r4(L); i < L; ++i, ++dstValPtr) {
+				float v = *dstValPtr;
+				v = v / denominator;
+				*dstValPtr = v;
+			}
+		} else {
+			float maxVal = FLT_MIN;
+			for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+				curIndex[axis] = i;
+				float v = *tensor_access_const(dst, curIndex);
+				maxVal = fmaxf(v, maxVal);
+			}
+			float denominator = 0.0f;
+			for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+				curIndex[axis] = i;
+				float v = *tensor_access_const(dst, curIndex) - maxVal;
+				v = expf(v);
+				*tensor_access(dst, curIndex) = v;
+				denominator += v;
+			}
+			for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+				curIndex[axis] = i;
+				*tensor_access(dst, curIndex) /= denominator;
+			}
 		}
 	} else if (curDim == axis) {
 		dfs_for_softmax(dst, curDim + 1, axis, curIndex);
