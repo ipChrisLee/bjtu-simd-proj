@@ -116,7 +116,7 @@ static float rand_float(float mxVal) {
 	assert(sizeof(int) == sizeof(float));
 	int x = rand();
 	int sign = rand();
-	return ((sign & 1) == 1 ? -1.0f : 1.0f) * (float) x / (float) (RAND_MAX + 1.0f) / mxVal;
+	return ((sign & 1) == 1 ? -1.0f : 1.0f) * (float) x / (float) RAND_MAX / mxVal;
 }
 
 static float rand_float_1() {
