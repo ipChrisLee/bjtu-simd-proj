@@ -47,6 +47,7 @@ def dump(
         src: np.ndarray | None = None,
         goldenDst: np.ndarray | None = None,
         kernel: np.ndarray | None = None,
+        weight: np.ndarray | None = None,
         padding: typ.List[int] | None = None,
         stride: typ.List[int] | None = None,
         axis: int | None = None,
@@ -57,6 +58,7 @@ def dump(
     _write_tensor("src", fp, src)
     _write_tensor("goldenDst", fp, goldenDst)
     _write_tensor("kernel", fp, kernel)
+    _write_tensor("weight", fp, weight)
     _write_axis(fp, axis)
     _write_tol(fp, "rtol", rtol)
     _write_tol(fp, "atol", atol)

@@ -85,6 +85,7 @@ TestInfo * test_info_read_from(const char * filePath, Msg_t * msg) {
 		process_part(src, tensor)
 		process_part(goldenDst, tensor)
 		process_part(kernel, tensor)
+		process_part(weight, tensor)
 		process_part(kernelSize, dim_array)
 		process_part(padding, dim_array)
 		process_part(stride, dim_array)
@@ -119,6 +120,7 @@ read_fail:
 	f(src);
 	f(goldenDst);
 	f(kernel);
+	f(weight);
 	f(kernelSize);
 	f(padding);
 	f(stride);

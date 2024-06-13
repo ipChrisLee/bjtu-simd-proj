@@ -23,6 +23,7 @@ typedef struct {
 	Tensor * src;
 	Tensor * goldenDst;
 	Tensor * kernel;
+	Tensor * weight;
 	DimArray * kernelSize;
 	DimArray * padding;
 	DimArray * stride;

@@ -36,6 +36,7 @@ int main(int argc, char const ** argv) {
 	layer_case(relu)
 	layer_case(softmax)
 	layer_case(conv2d)
+	layer_case(fc)
 	else {
 		printf(RED "Unsupported layer %s\n" NC, layerName);
 		exit(EXIT_FAILURE);
