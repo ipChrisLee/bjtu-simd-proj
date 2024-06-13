@@ -7,6 +7,7 @@ import numpy as np
 import os
 from relu import gen_relu
 from softmax import gen_softmax
+from conv2d import gen_conv2d
 
 
 def gen_dispatch(layer: str, testPath: Path):
@@ -15,6 +16,8 @@ def gen_dispatch(layer: str, testPath: Path):
             gen_relu(testPath)
         case "softmax":
             gen_softmax(testPath)
+        case "conv2d":
+            gen_conv2d(testPath)
         case _:
             raise Exception(f"Unkown layer {layer}")
 
@@ -33,6 +36,6 @@ def gen(suitePath: Path, layerList: typ.List[str], countEveryLayer: int):
 if __name__ == "__main__":
     np.random.seed(42)
     suitePath = Path(sys.argv[1])
-    layerList = ["relu", "softmax"]
+    layerList = ["relu", "softmax", "conv2d"]
     countEveryLayer = 5
     gen(suitePath=suitePath, layerList=layerList, countEveryLayer=countEveryLayer)

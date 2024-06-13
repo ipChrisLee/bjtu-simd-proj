@@ -4,31 +4,16 @@ import typing as typ
 from pathlib import Path
 
 
-def _write_src(fp: TextIOWrapper, src: np.ndarray | None):
-    if src is None:
+def _write_tensor(name: str, fp: TextIOWrapper, tensor: np.ndarray | None):
+    if tensor is None:
         return
-    fp.write("src ")
-    D = len(src.shape)
+    fp.write(f"{name} ")
+    D = len(tensor.shape)
     fp.write(f"{D} ")
-    shape = src.shape
+    shape = tensor.shape
     for l in shape:
         fp.write(f"{l} ")
-    lst = src.flatten()
-    for l in lst:
-        fp.write(f"{l} ")
-    fp.write("\n")
-
-
-def _write_goldenDst(fp: TextIOWrapper, goldenDst: np.ndarray | None):
-    if goldenDst is None:
-        return
-    fp.write("goldenDst ")
-    D = len(goldenDst.shape)
-    fp.write(f"{D} ")
-    shape = goldenDst.shape
-    for l in shape:
-        fp.write(f"{l} ")
-    lst = goldenDst.flatten()
+    lst = tensor.flatten()
     for l in lst:
         fp.write(f"{l} ")
     fp.write("\n")
@@ -50,13 +35,15 @@ def dump(
         tInfoPath: Path,
         src: np.ndarray | None = None,
         goldenDst: np.ndarray | None = None,
+        kernel: np.ndarray | None = None,
         axis: int | None = None,
         rtol: float | None = None,
         atol: float | None = None
 ):
     fp = open(tInfoPath, "w")
-    _write_src(fp, src)
-    _write_goldenDst(fp, goldenDst)
+    _write_tensor("src", fp, src)
+    _write_tensor("goldenDst", fp, goldenDst)
+    _write_tensor("kernel", fp, kernel)
     _write_axis(fp, axis)
     _write_tol(fp, "rtol", rtol)
     _write_tol(fp, "atol", atol)

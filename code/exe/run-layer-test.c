@@ -26,15 +26,16 @@ int main(int argc, char const ** argv) {
 
 	TestResultInfo * result = test_result_info_new();
 #define concat(x, y) x##y
-#define layerCase(layer) \
+#define layer_case(layer) \
 	else if (strcmp(layerName, #layer) == 0) { concat(test_, layer)(result, tInfo); }
 
 	// clang-format off
 	if(false){
 
 	}
-	layerCase(relu)
-	layerCase(softmax)
+	layer_case(relu)
+	layer_case(softmax)
+	layer_case(conv2d)
 	else {
 		printf(RED "Unsupported layer %s\n" NC, layerName);
 		exit(EXIT_FAILURE);
