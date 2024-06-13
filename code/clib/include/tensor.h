@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <string.h>
+
+#include "see.h"
 
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
@@ -19,6 +22,61 @@ static inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
 	return true;
 }
 
+static inline bool is_legal_padding(int32_t dim, const int32_t padding[MAX_DIM]) {
+	if (dim <= 0 || dim > MAX_DIM) {
+		return false;
+	}
+	for (int32_t i = 0; i < dim; ++i) {
+		if (padding[i] < 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static inline bool is_legal_kernel_size(int32_t dim, const int32_t kernelSize[MAX_DIM]) {
+	if (dim <= 0 || dim > MAX_DIM) {
+		return false;
+	}
+	for (int32_t i = 0; i < dim; ++i) {
+		if (kernelSize[i] <= 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// ============ ShapeInfo ============
+typedef struct {
+	int32_t dim;
+	int32_t shape[MAX_DIM];
+} ShapeInfo;
+
+static inline bool shape_info_equal(const ShapeInfo * lhs, const ShapeInfo * rhs) {
+	if (lhs->dim != rhs->dim) {
+		return false;
+	}
+	for (int32_t i = 0; i < lhs->dim; ++i) {
+		if (lhs->shape[i] != rhs->shape[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static inline bool shape_info_is_valid(const ShapeInfo * s) {
+	if (s->dim <= 0 || s->dim > MAX_DIM) {
+		return false;
+	}
+	for (int32_t i = 0; i < s->dim; ++i) {
+		if (s->shape[i] <= 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+// ============ Tensor ============
 typedef struct {
 	int32_t dim;
 	int32_t shape[MAX_DIM];
@@ -28,6 +86,9 @@ typedef struct {
 // ------------ ctor dtor ------------
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]);
 void tensor_delete(Tensor * p);
+Tensor * tensor_new_on_see(See * see, int32_t dim, const int32_t shape[MAX_DIM]);
+void tensor_delete_on_see(See * see, Tensor * p);
+
 
 // ------------ binary op method ------------
 bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs);
@@ -99,18 +160,28 @@ static inline float tensor_get_or_default_const(const Tensor * p, const int32_t 
 	return p->data[pos];
 }
 
+static inline ShapeInfo tensor_to_shape_info(const Tensor * p) {
+	ShapeInfo s;
+	s.dim = p->dim;
+	memcpy(s.shape, p->shape, sizeof(s.shape));
+	return s;
+}
+
 /**
  * @brief relu
  */
 void tensor_relu(Tensor * dst, const Tensor * src);
 
+static ShapeInfo tensor_relu_infer_shape(const ShapeInfo * srcShape) {
+	assert(shape_info_is_valid(srcShape) && "tensor_relu_infer_shape srcShape is not valid.");
+	return *srcShape;
+}
+
 static inline void tensor_relu_check(Tensor * dst, const Tensor * src) {
-	assert(tensor_is_valid(dst) && "Relu dst is not valid.");
-	assert(tensor_is_valid(src) && "Relu src is not valid.");
-	assert(dst->dim == src->dim && "Relu, src and dst should have same shape.");
-	for (int32_t i = 0; i < src->dim; ++i) {
-		assert(dst->shape[i] == src->shape[i] && "Relu, src and dst should have same shape.");
-	}
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo expectedDstShape = tensor_relu_infer_shape(&srcShape);
+	ShapeInfo dstShape = tensor_to_shape_info(dst);
+	assert(shape_info_equal(&dstShape, &expectedDstShape) && "tensor_relu_check dst shape is not same as expected shape.");
 }
 
 /**
@@ -136,25 +207,30 @@ static inline void tensor_relu_inplace_check(Tensor * op) {
  */
 void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]);
 
+static inline ShapeInfo tensor_conv2d_infer_shape(const ShapeInfo * srcShape, const ShapeInfo * kernelShape, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+	ShapeInfo dstShape;
+	dstShape.dim = srcShape->dim;
+	assert(shape_info_is_valid(srcShape) && "tensor_conv2d_infer_shape srcShape is not valid.");
+	assert(shape_info_is_valid(kernelShape) && "tensor_conv2d_infer_shape kernelShape is not valid.");
+	assert(srcShape->dim == 4 && "tensor_conv2d_infer_shape only supports 4 dim src.");
+	assert(kernelShape->dim == 4 && "tensor_conv2d_infer_shape only supports 4 dim kernel.");
+	assert(srcShape->dim == kernelShape->dim && "tensor_conv2d_infer_shape srcShape and kernelShape should have same dim.");
+	assert(srcShape->shape[1] == kernelShape->shape[0] && "tensor_conv2d_infer_shape kernelShape[0] should be inChannels.");
+	assert(is_legal_stride(2, stride) && "tensor_conv2d_infer_shape stride is not legal.");
+	assert(is_legal_padding(2, padding) && "tensor_conv2d_infer_shape padding is not legal.");
+	dstShape.shape[0 /*n*/] = srcShape->shape[0];
+	dstShape.shape[1 /*c*/] = kernelShape->shape[1];
+	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - kernelShape->shape[2]) / stride[0] + 1;
+	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - kernelShape->shape[3]) / stride[1] + 1;
+	return dstShape;
+}
+
 static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
-	assert(tensor_is_valid(dst) && "Conv2d dst is not valid.");
-	assert(tensor_is_valid(src) && "Conv2d src is not valid.");
-	assert(tensor_is_valid(kernel) && "Conv2d dst is not valid.");
-	assert(dst->dim == 4 && "Conv2d only supports 4 dim dst.");
-	assert(src->dim == 4 && "Conv2d only supports 4 dim src.");
-	assert(kernel->dim == 4 && "Conv2d only supports 4 dim kernel.");
-	int32_t hIn = src->shape[2], wIn = src->shape[3];
-	int32_t hOut = dst->shape[2], wOut = dst->shape[3];
-	int32_t hOutExpected = (hIn + 2 * padding[0] - kernel->shape[2]) / stride[0] + 1;
-	int32_t wOutExpected = (wIn + 2 * padding[1] - kernel->shape[3]) / stride[1] + 1;
-	int32_t inChannels = kernel->shape[0], outChannels = kernel->shape[1];
-	assert(inChannels == src->shape[1] && "Conv2d kernel in_channels is not same as src channels.");
-	assert(outChannels == dst->shape[1] && "Conv2d kernel out_channels is not same as dst channels.");
-	assert(dst->shape[0] == src->shape[0] && "Conv2d dst should have same batch size as src's.");
-	assert(dst->shape[1] == kernel->shape[0] && "Conv2d dst channel is not expected.");
-	assert(hOut == hOutExpected && "Conv2d dst tensor h dim length is not expected.");
-	assert(wOut == wOutExpected && "Conv2d dst tensor w dim length is not expected.");
-	assert(is_legal_stride(2, stride) && "Conv2d stride is not legal.");
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo kernelShape = tensor_to_shape_info(kernel);
+	ShapeInfo expectedDstShape = tensor_conv2d_infer_shape(&srcShape, &kernelShape, padding, stride);
+	ShapeInfo dstShape = tensor_to_shape_info(dst);
+	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_conv2d_check dstShape is not equal to expected.");
 }
 
 /**
@@ -166,19 +242,25 @@ static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const T
  */
 void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]);
 
+static inline ShapeInfo tensor_maxpool2d_infer_shape(const ShapeInfo * srcShape, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
+	assert(shape_info_is_valid(srcShape) && "tensor_maxpool2d_infer_shape srcShape is not valid.");
+	assert(srcShape->dim == 4 && "tensor_maxpool2d_infer_shape srcShape is not valid.");
+	assert(is_legal_kernel_size(2, kernelSize) && "tensor_maxpool2d_infer_shape kernelSize is not valid.");
+	assert(is_legal_stride(2, stride) && "tensor_maxpool2d_infer_shape stride is not valid.");
+	assert(is_legal_padding(2, padding) && "tensor_maxpool2d_infer_shape padding is not valid.");
+	ShapeInfo dstShape;
+	dstShape.dim = 4;
+	dstShape.shape[0 /*n*/] = srcShape->shape[0];
+	dstShape.shape[1 /*c*/] = srcShape->shape[1];
+	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - 1) / stride[0] + 1;
+	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - 1) / stride[1] + 1;
+}
+
 static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
-	assert(tensor_is_valid(dst) && "MaxPool2d dst is not valid.");
-	assert(tensor_is_valid(src) && "MaxPool2d src is not valid.");
-	assert(dst->dim == 4 && "MaxPool2d only supports 4 dim dst.");
-	assert(src->dim == 4 && "MaxPool2d only supports 4 dim src.");
-	assert(dst->shape[0] == src->shape[0] && "MaxPool2d require src and dst have same batch size.");
-	assert(dst->shape[1] == src->shape[1] && "MaxPool2d require src and dst have same channel number.");
-	int32_t hIn = src->shape[2], wIn = src->shape[3];
-	int32_t hOut = dst->shape[2], wOut = dst->shape[3];
-	int32_t hOutExpected = (hIn + 2 * padding[0] - 1) / stride[0] + 1;
-	int32_t wOutExpected = (wIn + 2 * padding[1] - 1) / stride[1] + 1;
-	assert(hOut == hOutExpected && "MaxPool2d dst tensor h dim length is not expected.");
-	assert(wOut == wOutExpected && "MaxPool2d dst tensor w dim length is not expected.");
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo expectedDstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, padding, stride);
+	ShapeInfo dstShape = tensor_to_shape_info(dst);
+	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_maxpool2d_check dstShape is not equal to expected.");
 }
 
 /**
@@ -186,12 +268,15 @@ static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, cons
  */
 void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis);
 
+static inline ShapeInfo tensor_softmax_infer_shape(const ShapeInfo * srcShape, int32_t axis) {
+	assert(shape_info_is_valid(srcShape) && "tensor_softmax_infer_shape srcShape is not valid.");
+	return *srcShape;
+}
+
 static inline void tensor_softmax_check(Tensor * dst, const Tensor * src, int32_t axis) {
-	assert(tensor_is_valid(dst) && "Softmax dst is not valid.");
-	assert(tensor_is_valid(src) && "Softmax src is not valid.");
-	assert(dst->dim == src->dim && "Softmax, src and dst should have same shape.");
-	for (int32_t i = 0; i < src->dim; ++i) {
-		assert(dst->shape[i] == src->shape[i] && "Softmax, src and dst should have same shape.");
-	}
-	assert(axis >= 0 && axis < src->dim && "Softmax softmax axis not legal.");
+	assert(axis >= 0 && axis < src->dim && "tensor_softmax_check softmax axis not legal.");
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo expectedDstShape = tensor_softmax_infer_shape(&srcShape, axis);
+	ShapeInfo dstShape = tensor_to_shape_info(dst);
+	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_softmax_check dstShape is not equal to expected.");
 }
