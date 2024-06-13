@@ -8,14 +8,6 @@
 #include <math.h>
 #include <float.h>
 
-static int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
-	int32_t len = 1;
-	for (int32_t i = 0; i < dim; ++i) {
-		len *= shape[i];
-	}
-	return len;
-}
-
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -55,7 +47,7 @@ void tensor_relu_inplace(Tensor * op) {
 	}
 }
 
-void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]) {
 	tensor_conv2d_check(dst, src, kernel, padding, stride);
 	const int32_t N = src->shape[0];
 	const int32_t C_IN = src->shape[1];

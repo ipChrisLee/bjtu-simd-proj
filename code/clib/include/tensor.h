@@ -9,6 +9,7 @@
 
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
+typedef const int32_t ConstDimArray[MAX_DIM];
 
 // ============ Helper Function ============
 static inline int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
@@ -94,6 +95,7 @@ typedef struct {
 
 typedef void * (*TensorMallocer)(size_t);
 typedef void (*TensorFreer)(void *);
+typedef float (*TensorRander)();
 
 // ------------ ctor dtor ------------
 // TODO: maybe need to be static inline.
@@ -198,7 +200,7 @@ static inline Tensor * tensor_load_from_file(TensorMallocer mallocer, const char
 	return p;
 }
 
-void tensor_save_to_file(const Tensor * p, const char * filePath) {
+static inline void tensor_save_to_file(const Tensor * p, const char * filePath) {
 	FILE * fp = fopen(filePath, "w");
 	int32_t len = 1;
 	fprintf(fp, "%" PRId32 " ", p->dim);
@@ -211,6 +213,13 @@ void tensor_save_to_file(const Tensor * p, const char * filePath) {
 		fprintf(fp, "%f ", p->data[i]);
 	}
 	fclose(fp);
+}
+
+static inline void tensor_fill_rand_data(Tensor * p, TensorRander rander) {
+	int32_t len = tensor_get_len(p);
+	for (int32_t i = 0; i < len; ++i) {
+		p->data[i] = rander();
+	}
 }
 
 // ------------ tensor layers ------------
@@ -260,9 +269,9 @@ static inline void tensor_relu_inplace_check(Tensor * op) {
  * @param padding 2 elements padding in hw.
  * @param stride 2 elements stride in hw.
  */
-void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]);
+void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]);
 
-static inline ShapeInfo tensor_conv2d_infer_shape(const ShapeInfo * srcShape, const ShapeInfo * kernelShape, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+static inline ShapeInfo tensor_conv2d_infer_shape(const ShapeInfo * srcShape, const ShapeInfo * kernelShape, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]) {
 	ShapeInfo dstShape;
 	dstShape.dim = srcShape->dim;
 	assert(shape_info_is_valid(srcShape) && "tensor_conv2d_infer_shape srcShape is not valid.");
@@ -280,7 +289,7 @@ static inline ShapeInfo tensor_conv2d_infer_shape(const ShapeInfo * srcShape, co
 	return dstShape;
 }
 
-static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]) {
 	ShapeInfo srcShape = tensor_to_shape_info(src);
 	ShapeInfo kernelShape = tensor_to_shape_info(kernel);
 	ShapeInfo expectedDstShape = tensor_conv2d_infer_shape(&srcShape, &kernelShape, padding, stride);
@@ -288,7 +297,7 @@ static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const T
 	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_conv2d_check dstShape is not equal to expected.");
 }
 
-static inline Tensor * tensor_conv2d_layer(TensorMallocer mallocer, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+static inline Tensor * tensor_conv2d_layer(TensorMallocer mallocer, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]) {
 	ShapeInfo srcShape = tensor_to_shape_info(src);
 	ShapeInfo kernelShape = tensor_to_shape_info(kernel);
 	ShapeInfo dstShape = tensor_conv2d_infer_shape(&srcShape, &kernelShape, padding, stride);
@@ -316,21 +325,21 @@ static inline ShapeInfo tensor_maxpool2d_infer_shape(const ShapeInfo * srcShape,
 	dstShape.dim = 4;
 	dstShape.shape[0 /*n*/] = srcShape->shape[0];
 	dstShape.shape[1 /*c*/] = srcShape->shape[1];
-	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - 1) / stride[0] + 1;
-	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - 1) / stride[1] + 1;
+	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - kernelSize[0]) / stride[0] + 1;
+	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - kernelSize[1]) / stride[1] + 1;
 	return dstShape;
 }
 
 static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
 	ShapeInfo srcShape = tensor_to_shape_info(src);
-	ShapeInfo expectedDstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, padding, stride);
+	ShapeInfo expectedDstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, stride, padding);
 	ShapeInfo dstShape = tensor_to_shape_info(dst);
 	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_maxpool2d_check dstShape is not equal to expected.");
 }
 
 static inline Tensor * tensor_maxpool2d_layer(TensorMallocer mallocer, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
 	ShapeInfo srcShape = tensor_to_shape_info(src);
-	ShapeInfo dstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, padding, stride);
+	ShapeInfo dstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, stride, padding);
 	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
 	tensor_maxpool2d(dst, src, kernelSize, stride, padding);
 	return dst;

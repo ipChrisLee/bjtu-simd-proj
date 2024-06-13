@@ -72,7 +72,7 @@ void tensor_relu_inplace(Tensor * op) {
 	}
 }
 
-void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], const int32_t stride[MAX_DIM]) {
 	tensor_conv2d_check(dst, src, kernel, padding, stride);
 	const int32_t N = src->shape[0];
 	const int32_t C_IN = src->shape[1];
