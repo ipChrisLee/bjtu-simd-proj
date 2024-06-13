@@ -1,7 +1,7 @@
 #include "tensor.h"
 
-#include <stdint.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -18,6 +18,31 @@ Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 
 void tensor_delete(Tensor * p) {
 	free(p);
+}
+
+Tensor * tensor_new_with_macllocer(TensorMallocer mallocer, int32_t dim, const int32_t shape[MAX_DIM]) {
+	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
+	Tensor * p = mallocer(memToUse);
+	p->dim = dim;
+	memcpy(p->shape, shape, sizeof(p->shape));
+	return p;
+}
+
+void tensor_delete_with_freer(TensorFreer freer, Tensor * p) {
+	freer(p);
+}
+
+bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs) {
+	if (lhs->dim != rhs->dim) {
+		return false;
+	}
+	const int32_t D = lhs->dim;
+	for (int32_t i = 0; i < D; ++i) {
+		if (lhs->shape[i] != rhs->shape[i]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 void tensor_memcpy(Tensor * dst, const Tensor * src) {
@@ -71,7 +96,7 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 							for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
 								const int32_t IND_SRC[MAX_DIM] = {b, ic, h * stride[0] + hKer - padding[0], w * stride[1] + wKer - padding[1]};
 								float vSrc = tensor_get_or_default_const(src, IND_SRC, PAD_VAL);
-								const int32_t IND_KER[MAX_DIM] = {ic, oc, hKer, wKer};
+								const int32_t IND_KER[MAX_DIM] = {oc, ic, hKer, wKer};
 								float vKer = *tensor_access_const(kernel, IND_KER);
 								s += vSrc * vKer;
 							}
@@ -114,77 +139,32 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 	}
 }
 
-/**
- * @brief Get the max val in softmax by dfs.
- */
-static float get_max_val_in_softmax(const Tensor * p, const int32_t D, const int32_t AXIS, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	float maxVal = FLT_MIN;
-	if (curDim == AXIS && curDim == D - 1) {
-		maxVal = *tensor_access_const(p, curIndex);
-	} else if (curDim == AXIS) {
-		maxVal = get_max_val_in_softmax(p, D, AXIS, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			float v = *tensor_access_const(p, curIndex);
-			maxVal = fmaxf(maxVal, v);
+static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray curIndex) {
+	if (curDim == dst->dim) {
+		float maxVal = FLT_MIN;
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			float v = *tensor_access_const(dst, curIndex);
+			maxVal = fmaxf(v, maxVal);
 		}
+		float denominator = 0.0f;
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			float v = *tensor_access_const(dst, curIndex) - maxVal;
+			v = expf(v);
+			*tensor_access(dst, curIndex) = v;
+			denominator += v;
+		}
+		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
+			curIndex[axis] = i;
+			*tensor_access(dst, curIndex) /= denominator;
+		}
+	} else if (curDim == axis) {
+		dfs_for_softmax(dst, curDim + 1, axis, curIndex);
 	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
+		for (int32_t i = 0; i < dst->shape[curDim]; ++i) {
 			curIndex[curDim] = i;
-			float v = get_max_val_in_softmax(p, D, AXIS, curIndex, curDim + 1);
-			maxVal = fmaxf(maxVal, v);
-		}
-	}
-	return maxVal;
-}
-
-/**
- * @brief Get the max val in softmax by dfs.
- */
-static float substract_max_val_and_exp_and_get_denominator_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float MAX_VAL, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	float denominator = 0;
-	if (curDim == AXIS && curDim == D - 1) {
-		float * fp = tensor_access(p, curIndex);
-		*fp -= MAX_VAL;
-		*fp = expf(*fp);
-		denominator += *fp;
-	} else if (curDim == AXIS) {
-		denominator = substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, MAX_VAL, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			float * fp = tensor_access(p, curIndex);
-			*fp -= MAX_VAL;
-			*fp = expf(*fp);
-			denominator += *fp;
-		}
-	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			denominator += substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, MAX_VAL, curIndex, curDim + 1);
-		}
-	}
-	return denominator;
-}
-
-/**
- * @brief Exp and divide
- */
-static void devide_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, const float DENOMINATOR, int32_t curIndex[MAX_DIM], int32_t curDim) {
-	if (curDim == AXIS && curDim == D - 1) {
-		*tensor_access(p, curIndex) /= DENOMINATOR;
-	} else if (curDim == AXIS) {
-		devide_in_softmax(p, D, AXIS, DENOMINATOR, curIndex, curDim + 1);
-	} else if (curDim == D - 1) {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			*tensor_access(p, curIndex) /= DENOMINATOR;
-		}
-	} else {
-		for (int32_t i = 0; i < p->shape[curDim]; ++i) {
-			curIndex[curDim] = i;
-			substract_max_val_and_exp_and_get_denominator_in_softmax(p, D, AXIS, DENOMINATOR, curIndex, curDim + 1);
+			dfs_for_softmax(dst, curDim + 1, axis, curIndex);
 		}
 	}
 }
@@ -192,13 +172,63 @@ static void devide_in_softmax(Tensor * p, const int32_t D, const int32_t AXIS, c
 void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis) {
 	tensor_softmax_check(dst, src, axis);
 	tensor_memcpy(dst, src);
-	const int32_t D = src->dim;
-	const int32_t L = src->shape[axis];
 	int32_t curIndex[MAX_DIM] = {};
-	for (int32_t l = 0; l < L; ++l) {
-		curIndex[axis] = l;
-		float maxVal = get_max_val_in_softmax(src, D, axis, curIndex, 0);
-		float denominator = substract_max_val_and_exp_and_get_denominator_in_softmax(dst, D, axis, maxVal, curIndex, 0);
-		devide_in_softmax(dst, D, axis, denominator, curIndex, 0);
+	dfs_for_softmax(dst, 0, axis, curIndex);
+}
+
+static void dfs_for_fc(Tensor * dst, const Tensor * src, const Tensor * weight, int32_t curDim, DimArray curIndex) {
+	if (curDim == src->dim - 1) {
+		//  (..., srcDimLen) dot (dstDimLen, srcDimLen)
+		int32_t dstDimLen = weight->shape[0];
+		int32_t srcDimLen = weight->shape[1];
+		int32_t weightIndex[MAX_DIM];
+		for (int32_t i = 0; i < dstDimLen; ++i) {
+			weightIndex[0] = i;
+			float s = 0;
+			for (int32_t j = 0; j < srcDimLen; ++j) {
+				curIndex[curDim] = j;
+				float srcVal = *tensor_access_const(src, curIndex);
+				weightIndex[1] = j;
+				float weightVal = *tensor_access_const(weight, weightIndex);
+				s += srcVal * weightVal;
+			}
+			curIndex[curDim] = i;
+			*tensor_access(dst, curIndex) = s;
+		}
+	} else {
+		const int32_t D = dst->shape[curDim];
+		for (int32_t i = 0; i < D; ++i) {
+			curIndex[curDim] = i;
+			dfs_for_fc(dst, src, weight, curDim + 1, curIndex);
+		}
 	}
+}
+
+void tensor_fc(Tensor * dst, const Tensor * src, const Tensor * weight) {
+	tensor_fc_check(dst, src, weight);
+	int32_t curIndex[MAX_DIM];
+	dfs_for_fc(dst, src, weight, 0, curIndex);
+}
+
+void tensor_reshape_inplace(Tensor * op, int32_t newDim, DimArray newShape) {
+	tensor_reshape_inplace_check(op, newDim, newShape);
+	int32_t oldLen = tensor_get_len(op);
+	int32_t newLen = 1;
+	int32_t minusOneIndex = -1;
+	for (int32_t i = 0; i < newDim; ++i) {
+		if (newShape[i] == -1) {
+			assert(minusOneIndex == -1 && "tensor_reshape_inplace get more than one -1 in newShape.");
+			minusOneIndex = i;
+		} else {
+			newLen *= newShape[i];
+		}
+	}
+	if (minusOneIndex != -1) {
+		assert(oldLen % newLen == 0 && "tensor_reshape_inplace shape deduce failed.");
+		newShape[minusOneIndex] = oldLen / newLen;
+		newLen = oldLen;
+	}
+	assert(newLen == oldLen && "tensor_reshape_inplace reshape requires same data length.");
+	op->dim = newDim;
+	memcpy(op->shape, newShape, sizeof(op->shape));
 }

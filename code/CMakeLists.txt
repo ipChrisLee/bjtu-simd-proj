@@ -23,6 +23,14 @@ add_executable(run-layer-test-std)
 target_sources(run-layer-test-std PRIVATE exe/run-layer-test.c)
 target_link_libraries(run-layer-test-std PUBLIC tlib clib-std)
 
+add_executable(run-layer-test-simd)
+target_sources(run-layer-test-simd PRIVATE exe/run-layer-test.c)
+target_link_libraries(run-layer-test-simd PUBLIC tlib clib-simd)
+
 add_executable(alex-net-std)
 target_sources(alex-net-std PRIVATE exe/alex-net.c)
 target_link_libraries(alex-net-std PUBLIC clib-std)
+
+add_executable(alex-net-simd)
+target_sources(alex-net-simd PRIVATE exe/alex-net.c)
+target_link_libraries(alex-net-simd PUBLIC clib-simd)
