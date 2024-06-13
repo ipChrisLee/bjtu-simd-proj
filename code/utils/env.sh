@@ -12,7 +12,17 @@ else
     export PATH="$PATH:$(pwd)/build-debug"
 fi
 
-# build-debug-dev: cross compile to arm arch.
-# build-debug: local host compile.
-# *-std: standard version.
-# *-simd: simd version.
+
+# if (onQemu)
+#   build: "-dev" with toolchain.cmake
+#   enable: simd && std
+#   run: on qemu
+# else
+#   if (onArm)
+#     build: without toolchain.cmake
+#     enable: simd && std
+#     run: on arm host
+#   else
+#     build: without toolchain.cmake
+#     enable: std
+#     run: on host (maybe amd64)

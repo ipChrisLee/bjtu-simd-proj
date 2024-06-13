@@ -2,8 +2,6 @@
 
 if [ ! -f "unittest/utils/anchor" ] || [ "$(head -1 unittest/utils/anchor)" != "unittest/utils | unittest" ]; then echo "Anchor [unittest/utils] not found!"; exit 1; fi
 
-export onQemu="y"
-
 source unittest/utils/env.sh
 
 export layer="$1"
