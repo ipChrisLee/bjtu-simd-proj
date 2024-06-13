@@ -57,3 +57,12 @@ This container has installed qemu, so you can run compiled executable file direc
 * [This wiki article](https://www.armadeus.org/wiki/index.php?title=NEON_HelloWorld) for neon demo.
 * [This answer in stackoverflow](https://stackoverflow.com/a/46811527/17924585) for help on how to static link library.
 * [This blog](https://ughe.github.io/2018/07/19/qemu-aarch64) for help on how to run elf in qemu-aarch64 when dynamic linking failed.
+
+## High light
+
+1. Docker development and convinient run in server.
+2. Qemu support in docker to enable local test (host x86, but arm elf).
+3. Fully tested. Every layer is tested.
+4. Simple switch in std and simd code.
+5. Robust test result. By using `See` data structure and user defined `malloc` to avoid time spend on `malloc` and get precise result. Use `static inline` functions to prevent the effect of unrelated part of program when comparing.
+6. Simd impl for every layer.
