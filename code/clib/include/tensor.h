@@ -309,6 +309,7 @@ static inline ShapeInfo tensor_maxpool2d_infer_shape(const ShapeInfo * srcShape,
 	dstShape.shape[1 /*c*/] = srcShape->shape[1];
 	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - 1) / stride[0] + 1;
 	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - 1) / stride[1] + 1;
+	return dstShape;
 }
 
 static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
@@ -349,5 +350,40 @@ static inline Tensor * tensor_softmax_layer(TensorMallocer mallocer, const Tenso
 	ShapeInfo dstShape = tensor_softmax_infer_shape(&srcShape, axis);
 	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
 	tensor_softmax(dst, src, axis);
+	return dst;
+}
+
+/**
+ * @brief fc.
+ * @note here `weight` is transposed weight. That is, for `y=xA`, `y` is `dst`, `x` is `src`, `A` is transposed `weight`. This make simd optimization simple.
+ */
+void tensor_fc(Tensor * dst, const Tensor * src, const Tensor * weight);
+
+static inline ShapeInfo tensor_fc_infer_shape(const ShapeInfo * srcShape, const ShapeInfo * weightShape) {
+	assert(shape_info_is_valid(srcShape) && "tensor_fc_infer_shape srcShape is not valid.");
+	assert(shape_info_is_valid(weightShape) && "tensor_fc_infer_shape weightShape is not valid.");
+	assert(weightShape->dim == 2 && "tensor_fc_infer_shape fc weight should have dim 2.");
+	assert(srcShape->shape[srcShape->dim - 1] == weightShape->shape[1] && "tensor_fc_infer_shape the last dim of src should have same length as weight first dim.");
+	ShapeInfo dstShape;
+	dstShape.dim = srcShape->dim;
+	memcpy(dstShape.shape, srcShape->shape, sizeof(dstShape.shape));
+	dstShape.shape[dstShape.dim - 1] = weightShape->shape[0];
+	return dstShape;
+}
+
+static inline void tensor_fc_check(Tensor * dst, const Tensor * src, const Tensor * weight) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo weightShape = tensor_to_shape_info(weight);
+	ShapeInfo expectedDstShape = tensor_fc_infer_shape(&srcShape, &weightShape);
+	ShapeInfo dstShape = tensor_to_shape_info(dst);
+	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_fc_check dstShape is not equal to expected.");
+}
+
+static inline Tensor * tensor_fc_layer(TensorMallocer mallocer, const Tensor * src, const Tensor * weight) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo weightShape = tensor_to_shape_info(weight);
+	ShapeInfo dstShape = tensor_fc_infer_shape(&srcShape, &weightShape);
+	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
+	tensor_fc(dst, src, weight);
 	return dst;
 }

@@ -185,3 +185,37 @@ void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis) {
 	int32_t curIndex[MAX_DIM] = {};
 	dfs_for_softmax(dst, 0, axis, curIndex);
 }
+
+static void dfs_for_fc(Tensor * dst, const Tensor * src, const Tensor * weight, int32_t curDim, DimArray curIndex) {
+	if (curDim == src->dim - 1) {
+		//  (..., srcDimLen) dot (dstDimLen, srcDimLen)
+		int32_t dstDimLen = weight->shape[0];
+		int32_t srcDimLen = weight->shape[1];
+		int32_t weightIndex[MAX_DIM];
+		for (int32_t i = 0; i < dstDimLen; ++i) {
+			weightIndex[0] = i;
+			float s = 0;
+			for (int32_t j = 0; j < srcDimLen; ++j) {
+				curIndex[curDim] = j;
+				float srcVal = *tensor_access_const(src, curIndex);
+				weightIndex[1] = j;
+				float weightVal = *tensor_access_const(weight, weightIndex);
+				s += srcVal * weightVal;
+			}
+			curIndex[curDim] = i;
+			*tensor_access(dst, curIndex) = s;
+		}
+	} else {
+		const int32_t D = dst->shape[curDim];
+		for (int32_t i = 0; i < D; ++i) {
+			curIndex[curDim] = i;
+			dfs_for_fc(dst, src, weight, curDim + 1, curIndex);
+		}
+	}
+}
+
+void tensor_fc(Tensor * dst, const Tensor * src, const Tensor * weight) {
+	tensor_fc_check(dst, src, weight);
+	int32_t curIndex[MAX_DIM];
+	dfs_for_fc(dst, src, weight, 0, curIndex);
+}
