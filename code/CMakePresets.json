@@ -27,6 +27,19 @@
             "toolchainFile": "toolchain.cmake",
             "binaryDir": "build-debug-dev",
 			"installDir": "install-debug-dev"
+        },
+        {
+            "name": "build-release-conf",
+            "displayName": "Build Release",
+            "description": "Build with Release config",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
+            },
+            "binaryDir": "build-release",
+			"installDir": "install-release"
         }
     ],
     "buildPresets": [
@@ -37,6 +50,10 @@
         {
             "name": "build-debug-dev",
             "configurePreset": "build-debug-dev-conf"
+        },
+        {
+            "name": "build-release",
+            "configurePreset": "build-release-conf"
         }
     ]
 }

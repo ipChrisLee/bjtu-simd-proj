@@ -11,6 +11,12 @@ fi
 if [ -n "$onQemu" ]; then
     utils/build-debug-dev.sh
     export PATH="$PATH:$(pwd)/build-debug-dev"
+elif [ -n "$onArm" ]; then
+    utils/build-debug.sh
+    export PATH="$PATH:$(pwd)/build-debug"
+elif [ -n "$onRel" ]; then
+    utils/build-release.sh
+    export PATH="$PATH:$(pwd)/build-release"
 else
     utils/build-debug.sh
     export PATH="$PATH:$(pwd)/build-debug"
@@ -32,6 +38,10 @@ fi # if [ -z "$envSourced" ]; then
 #     build: without toolchain.cmake
 #     enable: simd && std
 #     run: on arm host
+#   else if(onRel)
+#     build: "-release" without toolchain.cmake
+#     enable: simd && std
+#     run: on arm host and release version
 #   else
 #     build: without toolchain.cmake
 #     enable: std

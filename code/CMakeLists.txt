@@ -27,7 +27,7 @@ add_executable(tensor-diff)
 target_sources(tensor-diff PRIVATE exe/tensor-diff.c)
 target_link_libraries(tensor-diff PUBLIC clib-std)
 
-if(DEFINED ENV{onQemu} OR DEFINED ENV{onArm}) 
+if(DEFINED ENV{onQemu} OR DEFINED ENV{onArm} OR DEFINED ENV{onRel}) 
     add_library(clib-simd)
     target_include_directories(clib-simd PUBLIC clib/include)
     target_sources(clib-simd PUBLIC clib/src-simd/tensor.c clib/src-common/see.c)
