@@ -13,7 +13,10 @@ def gen_conv2d(tInfoPath: Path):
     kerShape[1] = srcShape[1]
     src = lib.gen_uniform_tensor(srcShape, (0, 1.0))
     kernel = lib.gen_uniform_tensor(kerShape, (0, 1.0))
-    stride = lib.gen_random_dim_array(d=2, l=1, r=5)
+    if lib.gen_uniform_bool():
+        stride = lib.gen_random_dim_array(d=2, l=1, r=5)
+    else:
+        stride = [1, 1]
     padding = lib.gen_random_dim_array(d=2, l=1, r=5)
     goldenDst = torch.conv2d(input=torch.tensor(src),
                              weight=torch.tensor(kernel), padding=padding, stride=stride)

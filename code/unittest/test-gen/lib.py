@@ -84,3 +84,7 @@ def gen_rand_tensor(shape: typ.List[int]) -> np.array:
 
 def gen_uniform_tensor(shape: typ.List[int], range: typ.Tuple[float, float]) -> np.array:
     return np.random.uniform(range[0], range[1], shape)
+
+
+def gen_uniform_bool() -> bool:
+    return np.random.randint(0, 2) == 1
