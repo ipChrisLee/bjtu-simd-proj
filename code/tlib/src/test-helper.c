@@ -39,8 +39,10 @@ static Tensor * read_tensor(FILE * fp, Msg_t * msg) {
 }
 
 static DimArray * read_dim_array(FILE * fp, Msg_t * msg) {
+	int32_t d;
+	fscanf(fp, "%" PRId32, &d);
 	DimArray * a = malloc(sizeof(DimArray));
-	for (int32_t i = 0; i < MAX_DIM; ++i) {
+	for (int32_t i = 0; i < d; ++i) {
 		fscanf(fp, "%" PRId32, (*a) + i);
 	}
 	return a;
