@@ -8,14 +8,6 @@
 #include <math.h>
 #include <float.h>
 
-static inline int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
-	int32_t len = 1;
-	for (int32_t i = 0; i < dim; ++i) {
-		len *= shape[i];
-	}
-	return len;
-}
-
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -218,4 +210,27 @@ void tensor_fc(Tensor * dst, const Tensor * src, const Tensor * weight) {
 	tensor_fc_check(dst, src, weight);
 	int32_t curIndex[MAX_DIM];
 	dfs_for_fc(dst, src, weight, 0, curIndex);
+}
+
+void tensor_reshape_inplace(Tensor * op, int32_t newDim, DimArray newShape) {
+	tensor_reshape_inplace_check(op, newDim, newShape);
+	int32_t oldLen = tensor_get_len(op);
+	int32_t newLen = 1;
+	int32_t minusOneIndex = -1;
+	for (int32_t i = 0; i < newDim; ++i) {
+		if (newShape[i] == -1) {
+			assert(minusOneIndex == -1 && "tensor_reshape_inplace get more than one -1 in newShape.");
+			minusOneIndex = i;
+		} else {
+			newLen *= newShape[i];
+		}
+	}
+	if (minusOneIndex != -1) {
+		assert(oldLen % newLen == 0 && "tensor_reshape_inplace shape deduce failed.");
+		newShape[minusOneIndex] = oldLen / newLen;
+		newLen = oldLen;
+	}
+	assert(newLen == oldLen && "tensor_reshape_inplace reshape requires same data length.");
+	op->dim = newDim;
+	memcpy(op->shape, newShape, sizeof(op->shape));
 }

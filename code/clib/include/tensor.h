@@ -10,6 +10,15 @@
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
 
+// ============ Helper Function ============
+static inline int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
+	int32_t len = 1;
+	for (int32_t i = 0; i < dim; ++i) {
+		len *= shape[i];
+	}
+	return len;
+}
+
 static inline bool is_legal_stride(int32_t dim, const int32_t stride[MAX_DIM]) {
 	if (dim <= 0 || dim > MAX_DIM) {
 		return false;
@@ -386,4 +395,15 @@ static inline Tensor * tensor_fc_layer(TensorMallocer mallocer, const Tensor * s
 	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
 	tensor_fc(dst, src, weight);
 	return dst;
+}
+
+/**
+ * @brief do reshape inplace.
+ *
+ * @param newShape new shape. There could be at most one `-1` to be auto deduced length. And after function finished, `-1` will be the deduced length.
+ */
+void tensor_reshape_inplace(Tensor * op, int32_t newDim, DimArray newShape);
+
+static inline void tensor_reshape_inplace_check(Tensor * op, int32_t newDim, DimArray newShape) {
+	assert(tensor_is_valid(op) && "tensor_reshape_inplace_check op is not valid.");
 }
