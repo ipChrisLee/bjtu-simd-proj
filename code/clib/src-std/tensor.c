@@ -96,7 +96,7 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 							for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
 								const int32_t IND_SRC[MAX_DIM] = {b, ic, h * stride[0] + hKer - padding[0], w * stride[1] + wKer - padding[1]};
 								float vSrc = tensor_get_or_default_const(src, IND_SRC, PAD_VAL);
-								const int32_t IND_KER[MAX_DIM] = {ic, oc, hKer, wKer};
+								const int32_t IND_KER[MAX_DIM] = {oc, ic, hKer, wKer};
 								float vKer = *tensor_access_const(kernel, IND_KER);
 								s += vSrc * vKer;
 							}

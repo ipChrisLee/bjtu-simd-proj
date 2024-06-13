@@ -265,7 +265,7 @@ static inline void tensor_relu_inplace_check(Tensor * op) {
  * @note According to conv2d definition, only `padding` is 2 dim.
  * @note According to conv2d definition, only `kernel` with 4 dim is supported.
  * @note Diff to torch.nn.conv2d, we don't use `in_channels`, `out_channels` and `kernel_size` parameters explicit. 
- 		 Instead, `kernel` is protential to be (in_channels, out_channels, kernel_size[0], kernel_size[1]) shape.
+ 		 Instead, `kernel` is protential to be (out_channels, in_channels, kernel_size[0], kernel_size[1]) shape.
  * @param padding 2 elements padding in hw.
  * @param stride 2 elements stride in hw.
  */
@@ -279,11 +279,11 @@ static inline ShapeInfo tensor_conv2d_infer_shape(const ShapeInfo * srcShape, co
 	assert(srcShape->dim == 4 && "tensor_conv2d_infer_shape only supports 4 dim src.");
 	assert(kernelShape->dim == 4 && "tensor_conv2d_infer_shape only supports 4 dim kernel.");
 	assert(srcShape->dim == kernelShape->dim && "tensor_conv2d_infer_shape srcShape and kernelShape should have same dim.");
-	assert(srcShape->shape[1] == kernelShape->shape[0] && "tensor_conv2d_infer_shape kernelShape[0] should be inChannels.");
+	assert(srcShape->shape[1] == kernelShape->shape[1] && "tensor_conv2d_infer_shape kernelShape[0] should be inChannels.");
 	assert(is_legal_stride(2, stride) && "tensor_conv2d_infer_shape stride is not legal.");
 	assert(is_legal_padding(2, padding) && "tensor_conv2d_infer_shape padding is not legal.");
 	dstShape.shape[0 /*n*/] = srcShape->shape[0];
-	dstShape.shape[1 /*c*/] = kernelShape->shape[1];
+	dstShape.shape[1 /*c*/] = kernelShape->shape[0];
 	dstShape.shape[2 /*h*/] = (srcShape->shape[2] + 2 * padding[0] - kernelShape->shape[2]) / stride[0] + 1;
 	dstShape.shape[3 /*w*/] = (srcShape->shape[3] + 2 * padding[1] - kernelShape->shape[3]) / stride[1] + 1;
 	return dstShape;
