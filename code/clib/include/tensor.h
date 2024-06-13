@@ -148,6 +148,7 @@ static inline bool tensor_is_valid(const Tensor * p) {
 static inline const float * tensor_access_const(const Tensor * p, const int32_t ind[MAX_DIM]) {
 	int32_t pos = 0, step = 1;
 	for (int32_t i = p->dim - 1; i >= 0; --i) {
+		assert(ind[i] < p->shape[i] && ind[i] >= 0 && "tensor_access_const out of range.");
 		pos += ind[i] * step;
 		step *= p->shape[i];
 	}
@@ -157,6 +158,7 @@ static inline const float * tensor_access_const(const Tensor * p, const int32_t 
 static inline float * tensor_access(Tensor * p, const int32_t ind[MAX_DIM]) {
 	int32_t pos = 0, step = 1;
 	for (int32_t i = p->dim - 1; i >= 0; --i) {
+		assert(ind[i] < p->shape[i] && ind[i] >= 0 && "tensor_access out of range.");
 		pos += ind[i] * step;
 		step *= p->shape[i];
 	}
@@ -200,8 +202,8 @@ static inline Tensor * tensor_load_from_file(TensorMallocer mallocer, const char
 	return p;
 }
 
-static inline void tensor_save_to_file(const Tensor * p, const char * filePath) {
-	FILE * fp = fopen(filePath, "w");
+static inline void tensor_save_to_file(const Tensor * p, const char * filePath, bool append) {
+	FILE * fp = fopen(filePath, append ? "w+" : "w");
 	int32_t len = 1;
 	fprintf(fp, "%" PRId32 " ", p->dim);
 	for (int32_t i = 0; i < p->dim; ++i) {
@@ -212,6 +214,7 @@ static inline void tensor_save_to_file(const Tensor * p, const char * filePath) 
 	for (int32_t i = 0; i < len; ++i) {
 		fprintf(fp, "%f ", p->data[i]);
 	}
+	fprintf(fp, "\n");
 	fclose(fp);
 }
 

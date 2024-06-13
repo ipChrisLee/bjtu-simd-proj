@@ -172,8 +172,6 @@ static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray
 void tensor_softmax(Tensor * dst, const Tensor * src, int32_t axis) {
 	tensor_softmax_check(dst, src, axis);
 	tensor_memcpy(dst, src);
-	const int32_t D = src->dim;
-	const int32_t L = src->shape[axis];
 	int32_t curIndex[MAX_DIM] = {};
 	dfs_for_softmax(dst, 0, axis, curIndex);
 }
