@@ -198,19 +198,19 @@ static void dfs_for_fc(Tensor * dst, const Tensor * src, const Tensor * weight, 
 		//  (..., srcDimLen) dot (dstDimLen, srcDimLen)
 		int32_t dstDimLen = weight->shape[0];
 		int32_t srcDimLen = weight->shape[1];
-		int32_t weightIndex[MAX_DIM];
-		for (int32_t i = 0; i < dstDimLen; ++i) {
-			weightIndex[0] = i;
+		curIndex[curDim] = 0;
+		const float * srcValPtrBase = tensor_access_const(src, curIndex);
+		const float * weightValPtr = weight->data;
+		float * dstValPtr = tensor_access(dst, curIndex);
+		for (int32_t i = 0; i < dstDimLen; ++i, ++dstValPtr) {
 			float s = 0;
-			for (int32_t j = 0; j < srcDimLen; ++j) {
-				curIndex[curDim] = j;
-				float srcVal = *tensor_access_const(src, curIndex);
-				weightIndex[1] = j;
-				float weightVal = *tensor_access_const(weight, weightIndex);
+			const float * srcValPtr = srcValPtrBase;
+			for (int32_t j = 0; j < srcDimLen; ++j, ++srcValPtr, ++weightValPtr) {
+				float srcVal = *srcValPtr;
+				float weightVal = *weightValPtr;
 				s += srcVal * weightVal;
 			}
-			curIndex[curDim] = i;
-			*tensor_access(dst, curIndex) = s;
+			*dstValPtr = s;
 		}
 	} else {
 		const int32_t D = dst->shape[curDim];
