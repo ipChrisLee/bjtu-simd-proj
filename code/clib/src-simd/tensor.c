@@ -110,26 +110,83 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 	const int32_t W_KER = kernel->shape[3];
 	const int32_t H_OUT = dst->shape[2];
 	const int32_t W_OUT = dst->shape[3];
-	const float PAD_VAL = 0;
-	for (int32_t b = 0; b < N; ++b) {
-		for (int32_t oc = 0; oc < C_OUT; ++oc) {
-			for (int32_t h = 0; h < H_OUT; ++h) {
-				for (int32_t w = 0; w < W_OUT; ++w) {
-					float s = 0;
-					const int32_t IND_DST[MAX_DIM] = {b, oc, h, w};
-					// cross-correlation
-					for (int32_t ic = 0; ic < C_IN; ++ic) {
-						for (int32_t hKer = 0; hKer < H_KER; ++hKer) {
-							for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
-								const int32_t IND_SRC[MAX_DIM] = {b, ic, h * stride[0] + hKer - padding[0], w * stride[1] + wKer - padding[1]};
-								float vSrc = tensor_get_or_default_const(src, IND_SRC, PAD_VAL);
-								const int32_t IND_KER[MAX_DIM] = {oc, ic, hKer, wKer};
-								float vKer = *tensor_access_const(kernel, IND_KER);
-								s += vSrc * vKer;
+	const float Pad_Val = 0;
+	if (stride[0] == 1 && stride[1] == 1) {
+		float * dstValPtr = dst->data;
+		for (int32_t b = 0; b < N; ++b) {
+			for (int32_t oc = 0; oc < C_OUT; ++oc) {
+				for (int32_t h = 0; h < H_OUT; ++h) {
+					for (int32_t w = 0; w < W_OUT; ++w) {
+						// cross-correlation
+						const int32_t IND_KER[MAX_DIM] = {oc, 0, 0, 0};
+						const float * kerValPtr = tensor_access_const(kernel, IND_KER);
+
+						float s = 0;
+						for (int32_t ic = 0; ic < C_IN; ++ic) {
+							int32_t hKer = 0;
+							for (; hKer < H_KER && h + hKer - padding[0] < 0; ++hKer) {
+								for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+									float vSrc = Pad_Val;
+									float vKer = *(kerValPtr++);
+									s += vSrc * vKer;
+								}
+							}
+							for (; hKer < H_KER && h + hKer - padding[0] < H_IN; ++hKer) {
+								int32_t wKer = 0;
+								for (; wKer < W_KER && w + wKer - padding[1] < 0; ++wKer) {
+									// left padded {w+wKer-padding[1]<0}
+									float vSrc = Pad_Val;
+									float vKer = *(kerValPtr++);
+									s += vSrc * vKer;
+								}
+								for (; wKer < W_KER && w + wKer - padding[1] < W_IN; ++wKer) {
+									const int32_t IND_SRC[MAX_DIM] = {b, ic, h + hKer - padding[0], w + wKer - padding[1]};
+									float vSrc = *tensor_access_const(src, IND_SRC);
+									float vKer = *(kerValPtr++);
+									s += vSrc * vKer;
+								}
+								for (; wKer < W_KER; ++wKer) {
+									// right padding if any.
+									float vSrc = Pad_Val;
+									float vKer = *(kerValPtr++);
+									s += vSrc * vKer;
+								}
+							}
+							for (; hKer < H_KER; ++hKer) {
+								for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+									float vSrc = Pad_Val;
+									float vKer = *(kerValPtr++);
+									s += vSrc * vKer;
+								}
 							}
 						}
+						*dstValPtr = s;
+						++dstValPtr;
 					}
-					*tensor_access(dst, IND_DST) = s;
+				}
+			}
+		}
+	} else {
+		for (int32_t b = 0; b < N; ++b) {
+			for (int32_t oc = 0; oc < C_OUT; ++oc) {
+				for (int32_t h = 0; h < H_OUT; ++h) {
+					for (int32_t w = 0; w < W_OUT; ++w) {
+						float s = 0;
+						const int32_t IND_DST[MAX_DIM] = {b, oc, h, w};
+						// cross-correlation
+						for (int32_t ic = 0; ic < C_IN; ++ic) {
+							for (int32_t hKer = 0; hKer < H_KER; ++hKer) {
+								for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+									const int32_t IND_SRC[MAX_DIM] = {b, ic, h * stride[0] + hKer - padding[0], w * stride[1] + wKer - padding[1]};
+									float vSrc = tensor_get_or_default_const(src, IND_SRC, Pad_Val);
+									const int32_t IND_KER[MAX_DIM] = {oc, ic, hKer, wKer};
+									float vKer = *tensor_access_const(kernel, IND_KER);
+									s += vSrc * vKer;
+								}
+							}
+						}
+						*tensor_access(dst, IND_DST) = s;
+					}
 				}
 			}
 		}
