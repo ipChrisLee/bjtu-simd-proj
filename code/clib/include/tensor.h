@@ -5,8 +5,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "see.h"
-
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
 
@@ -83,11 +81,14 @@ typedef struct {
 	float data[];
 } Tensor;
 
+typedef void * (*TensorMallocer)(size_t);
+typedef void (*TensorFreer)(void *);
+
 // ------------ ctor dtor ------------
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]);
 void tensor_delete(Tensor * p);
-Tensor * tensor_new_on_see(See * see, int32_t dim, const int32_t shape[MAX_DIM]);
-void tensor_delete_on_see(See * see, Tensor * p);
+Tensor * tensor_new_with_macllocer(TensorMallocer mallocer, int32_t dim, const int32_t shape[MAX_DIM]);
+void tensor_delete_with_freer(TensorFreer freer, Tensor * p);
 
 
 // ------------ binary op method ------------
@@ -172,7 +173,7 @@ static inline ShapeInfo tensor_to_shape_info(const Tensor * p) {
  */
 void tensor_relu(Tensor * dst, const Tensor * src);
 
-static ShapeInfo tensor_relu_infer_shape(const ShapeInfo * srcShape) {
+static inline ShapeInfo tensor_relu_infer_shape(const ShapeInfo * srcShape) {
 	assert(shape_info_is_valid(srcShape) && "tensor_relu_infer_shape srcShape is not valid.");
 	return *srcShape;
 }
@@ -182,6 +183,14 @@ static inline void tensor_relu_check(Tensor * dst, const Tensor * src) {
 	ShapeInfo expectedDstShape = tensor_relu_infer_shape(&srcShape);
 	ShapeInfo dstShape = tensor_to_shape_info(dst);
 	assert(shape_info_equal(&dstShape, &expectedDstShape) && "tensor_relu_check dst shape is not same as expected shape.");
+}
+
+static inline Tensor * tensor_relu_layer(TensorMallocer mallocer, const Tensor * src) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo dstShape = tensor_relu_infer_shape(&srcShape);
+	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
+	tensor_relu(dst, src);
+	return dst;
 }
 
 /**
@@ -233,6 +242,15 @@ static inline void tensor_conv2d_check(Tensor * dst, const Tensor * src, const T
 	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_conv2d_check dstShape is not equal to expected.");
 }
 
+static inline Tensor * tensor_conv2d_layer(TensorMallocer mallocer, const Tensor * src, const Tensor * kernel, const int32_t padding[MAX_DIM], int32_t stride[MAX_DIM]) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo kernelShape = tensor_to_shape_info(kernel);
+	ShapeInfo dstShape = tensor_conv2d_infer_shape(&srcShape, &kernelShape, padding, stride);
+	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
+	tensor_conv2d(dst, src, kernel, padding, stride);
+	return dst;
+}
+
 /**
  * @brief maxpool2d to `src` with `kernel`. Conv on the last two dims on src. padding mode is zeros.
  * @note Only supports src and dst with nchw layout. That is: 
@@ -263,6 +281,14 @@ static inline void tensor_maxpool2d_check(Tensor * dst, const Tensor * src, cons
 	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_maxpool2d_check dstShape is not equal to expected.");
 }
 
+static inline Tensor * tensor_maxpool2d_layer(TensorMallocer mallocer, const Tensor * src, const int32_t kernelSize[MAX_DIM], const int32_t stride[MAX_DIM], const int32_t padding[MAX_DIM]) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo dstShape = tensor_maxpool2d_infer_shape(&srcShape, kernelSize, padding, stride);
+	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
+	tensor_maxpool2d(dst, src, kernelSize, stride, padding);
+	return dst;
+}
+
 /**
  * @brief softmax
  */
@@ -279,4 +305,12 @@ static inline void tensor_softmax_check(Tensor * dst, const Tensor * src, int32_
 	ShapeInfo expectedDstShape = tensor_softmax_infer_shape(&srcShape, axis);
 	ShapeInfo dstShape = tensor_to_shape_info(dst);
 	assert(shape_info_equal(&expectedDstShape, &dstShape) && "tensor_softmax_check dstShape is not equal to expected.");
+}
+
+static inline Tensor * tensor_softmax_layer(TensorMallocer mallocer, const Tensor * src, int32_t axis) {
+	ShapeInfo srcShape = tensor_to_shape_info(src);
+	ShapeInfo dstShape = tensor_softmax_infer_shape(&srcShape, axis);
+	Tensor * dst = tensor_new_with_macllocer(mallocer, dstShape.dim, dstShape.shape);
+	tensor_softmax(dst, src, axis);
+	return dst;
 }

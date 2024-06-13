@@ -28,16 +28,16 @@ void tensor_delete(Tensor * p) {
 	free(p);
 }
 
-Tensor * tensor_new_on_see(See * see, int32_t dim, const int32_t shape[MAX_DIM]) {
+Tensor * tensor_new_with_macllocer(TensorMallocer mallocer, int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
-	Tensor * p = see_malloc(see, memToUse);
+	Tensor * p = mallocer(memToUse);
 	p->dim = dim;
 	memcpy(p->shape, shape, sizeof(p->shape));
 	return p;
 }
 
-void tensor_delete_on_see(See * see, Tensor * p) {
-	// do nothing
+void tensor_delete_with_freer(TensorFreer freer, Tensor * p) {
+	freer(p);
 }
 
 bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs) {
