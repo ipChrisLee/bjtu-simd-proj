@@ -67,3 +67,7 @@ This container has installed qemu, so you can run compiled executable file direc
 4. Simple switch in std and simd code.
 5. Robust test result. By using `See` data structure and user defined `malloc` to avoid time spend on `malloc` and get precise result. Use `static inline` functions to prevent the effect of unrelated part of program when comparing.
 6. Simd impl for every layer.
+
+## simd speedup
+
+* After simd relu: 83s => 83s
