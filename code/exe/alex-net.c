@@ -149,7 +149,23 @@ void alex_net_gen_data(unsigned int seed, const int32_t N) {
 	fc8_fc_weight = new_tensor_helper(rand_float_100, 2, 4096, 4096);
 }
 
+#ifdef do_timeit
+clock_t g_timeSentinel;
+	#define start_timeit() \
+		if (true) { g_timeSentinel = time(NULL); }
+	#define timeit()                                                                          \
+		if (true) {                                                                           \
+			clock_t cur = time(NULL);                                                         \
+			printf("At line {%d} time cost {%f}\n", __LINE__, difftime(cur, g_timeSentinel)); \
+			g_timeSentinel = cur;                                                             \
+		}
+#else
+	#define start_timeit()
+	#define timeit()
+#endif
+
 void alex_net_infer(const int32_t N) {
+	start_timeit();
 	{
 		// input = new_tensor_helper(rand_float, 4, N, 3, 227, 227);
 	}
@@ -165,6 +181,7 @@ void alex_net_infer(const int32_t N) {
 		ConstDimArray Maxpool2d_Padding = {0, 0};
 		c2_conv2d_src = tensor_maxpool2d_layer(see_mallocer, c1_maxpool2d_src, Maxpool2d_Kernel_Size, Maxpool2d_Stride, Maxpool2d_Padding);
 	}
+	timeit();
 	{
 		// c2_conv2d_kernel = new_tensor_helper(rand_float, 4, 96, 256, 5, 5);
 		ConstDimArray Conv2d_Padding = {2, 2};
@@ -176,6 +193,7 @@ void alex_net_infer(const int32_t N) {
 		ConstDimArray Maxpool2d_Padding = {0, 0};
 		c3_conv2d_src = tensor_maxpool2d_layer(see_mallocer, c2_maxpool2d_src, Maxpool2d_Kernel_Size, Maxpool2d_Stride, Maxpool2d_Padding);
 	}
+	timeit();
 	{
 		// c3_conv2d_kernel = new_tensor_helper(rand_float, 4, 256, 384, 3, 3);
 		ConstDimArray Conv2d_Padding = {1, 1};
@@ -183,6 +201,7 @@ void alex_net_infer(const int32_t N) {
 		c3_relu_src = tensor_conv2d_layer(see_mallocer, c3_conv2d_src, c3_conv2d_kernel, Conv2d_Padding, Conv2d_Stride);
 		c4_conv2d_src = tensor_relu_layer(see_mallocer, c3_relu_src);
 	}
+	timeit();
 	{
 		// c4_conv2d_kernel = new_tensor_helper(rand_float, 4, 384, 384, 3, 3);
 		ConstDimArray Conv2d_Padding = {1, 1};
@@ -190,6 +209,7 @@ void alex_net_infer(const int32_t N) {
 		c4_relu_src = tensor_conv2d_layer(see_mallocer, c4_conv2d_src, c4_conv2d_kernel, Conv2d_Padding, Conv2d_Stride);
 		c5_conv2d_src = tensor_relu_layer(see_mallocer, c4_relu_src);
 	}
+	timeit();
 	{
 		// c5_conv2d_kernel = new_tensor_helper(rand_float, 4, 384, 256, 3, 3);
 		ConstDimArray Conv2d_Padding = {1, 1};
@@ -201,6 +221,7 @@ void alex_net_infer(const int32_t N) {
 		ConstDimArray Maxpool2d_Padding = {0, 0};
 		c6_conv2d_src = tensor_maxpool2d_layer(see_mallocer, c5_maxpool2d_src, Maxpool2d_Kernel_Size, Maxpool2d_Stride, Maxpool2d_Padding);
 	}
+	timeit();
 	{
 		// c6_conv2d_kernel = new_tensor_helper(rand_float, 4, 256, 4096, 6, 6);
 		ConstDimArray Conv2d_Padding = {0, 0};
@@ -211,16 +232,19 @@ void alex_net_infer(const int32_t N) {
 		DimArray reshapeNewShape = {N, 4096};
 		tensor_reshape_inplace(fc7_fc_src, Reshape_New_Dim, reshapeNewShape);
 	}
+	timeit();
 	{
 		// fc7_fc_weight = new_tensor_helper(rand_float, 2, 4096, 4096);
 		fc7_relu_src = tensor_fc_layer(see_mallocer, fc7_fc_src, fc7_fc_weight);
 		fc8_fc_src = tensor_relu_layer(see_mallocer, fc7_relu_src);
 	}
+	timeit();
 	{
 		// fc8_fc_weight = new_tensor_helper(rand_float, 2, 4096, 4096);
 		fc8_softmax_src = tensor_fc_layer(see_mallocer, fc8_fc_src, fc8_fc_weight);
 		output = tensor_softmax_layer(see_mallocer, fc8_softmax_src, 1);
 	}
+	timeit();
 }
 
 // ============ main program ============

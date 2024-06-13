@@ -5,6 +5,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 link_libraries(m)
 
+if(DEFINED ENV{doTimeit})
+    add_definitions(-DdoTimeit)
+endif()
+
 add_library(clib-std)
 target_include_directories(clib-std PUBLIC clib/include)
 target_sources(clib-std PUBLIC clib/src-std/tensor.c clib/src-common/see.c)

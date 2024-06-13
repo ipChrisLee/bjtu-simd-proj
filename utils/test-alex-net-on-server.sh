@@ -11,4 +11,5 @@ sudo find /tmp/code -type f -name "tInfo*" -exec rm {} +
 sudo find /tmp/code -type d -name "workspace*" -exec rm -rf {} +
 true_ssh 'rm -rf code'
 true_scp -r /tmp/code "$remote":~/code
+# to timeit, add `export doTimeit=y;`
 true_ssh 'export onRel=y; cd code; utils/run-alex-net-and-compare.sh'
