@@ -184,6 +184,20 @@ static inline ShapeInfo tensor_to_shape_info(const Tensor * p) {
 	return s;
 }
 
+static inline void tensor_dump(const char * prefix, const Tensor * p) {
+	const int32_t D = p->dim;
+	const int32_t L = tensor_get_len(p);
+	fprintf(stderr, "%s [", prefix);
+	for (int32_t i = 0; i < D; ++i) {
+		fprintf(stderr, "%" PRId32, p->shape[i]);
+	}
+	fprintf(stderr, "] {");
+	for (int32_t i = 0; i < L; ++i) {
+		fprintf(stderr, "%f ", p->data[i]);
+	}
+	fprintf(stderr, "}\n");
+}
+
 // ------------ tensor save and load ------------
 static inline Tensor * tensor_load_from_file(TensorMallocer mallocer, const char * filePath) {
 	FILE * fp = fopen(filePath, "r");
