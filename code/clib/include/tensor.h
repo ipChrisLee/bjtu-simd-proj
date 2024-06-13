@@ -1,5 +1,6 @@
 #pragma once
 
+#include <math.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -104,10 +105,6 @@ void tensor_delete(Tensor * p);
 Tensor * tensor_new_with_macllocer(TensorMallocer mallocer, int32_t dim, const int32_t shape[MAX_DIM]);
 void tensor_delete_with_freer(TensorFreer freer, Tensor * p);
 
-
-// ------------ binary op method ------------
-bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs);
-
 // ------------ member method ------------
 /**
  * @brief copy from src data to dst data. Require data length same, or program will down.
@@ -196,6 +193,33 @@ static inline void tensor_dump(const char * prefix, const Tensor * p) {
 		fprintf(stderr, "%f ", p->data[i]);
 	}
 	fprintf(stderr, "}\n");
+}
+
+// ------------ binary op method ------------
+bool tensor_same_shape(const Tensor * lhs, const Tensor * rhs);
+
+static inline bool tensor_compare(const Tensor * v, const Tensor * ref, float atol, float rtol, bool * isDiffOnIndex, DimArray * diffIndex, bool * isDiffOnShape) {
+	if (!tensor_same_shape(v, ref)) {
+		if (isDiffOnShape) {
+			*isDiffOnShape = true;
+		}
+		return false;
+	}
+	const int32_t Len = tensor_get_len(v);
+	for (int32_t i = 0; i < Len; ++i) {
+		float vl = v->data[i];
+		float vr = ref->data[i];
+		if (fabsf(vl - vr) > atol + rtol * fabsf(vr)) {
+			if (isDiffOnIndex) {
+				*isDiffOnIndex = true;
+			}
+			if (diffIndex) {
+				tensor_get_index_by_len(v, i, *diffIndex);
+			}
+			return false;
+		}
+	}
+	return true;
 }
 
 // ------------ tensor save and load ------------
