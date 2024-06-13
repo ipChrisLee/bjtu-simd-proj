@@ -8,7 +8,7 @@
 #include <math.h>
 #include <float.h>
 
-static int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
+static inline int32_t get_len_from_shape(int32_t dim, const int32_t shape[MAX_DIM]) {
 	int32_t len = 1;
 	for (int32_t i = 0; i < dim; ++i) {
 		len *= shape[i];

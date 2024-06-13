@@ -3,7 +3,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define MAX_DIM 4
 typedef int32_t DimArray[MAX_DIM];
@@ -85,6 +87,7 @@ typedef void * (*TensorMallocer)(size_t);
 typedef void (*TensorFreer)(void *);
 
 // ------------ ctor dtor ------------
+// TODO: maybe need to be static inline.
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]);
 void tensor_delete(Tensor * p);
 Tensor * tensor_new_with_macllocer(TensorMallocer mallocer, int32_t dim, const int32_t shape[MAX_DIM]);
@@ -168,6 +171,40 @@ static inline ShapeInfo tensor_to_shape_info(const Tensor * p) {
 	return s;
 }
 
+// ------------ tensor save and load ------------
+static inline Tensor * tensor_load_from_file(TensorMallocer mallocer, const char * filePath) {
+	FILE * fp = fopen(filePath, "r");
+	int32_t dim, len = 1;
+	int32_t shape[MAX_DIM];
+	fscanf(fp, "%" PRId32, &dim);
+	for (int32_t i = 0; i < dim; ++i) {
+		fscanf(fp, "%" PRId32, shape + i);
+		len *= shape[i];
+	}
+	Tensor * p = tensor_new_with_macllocer(mallocer, dim, shape);
+	for (int32_t i = 0; i < len; ++i) {
+		fscanf(fp, "%f", p->data + i);
+	}
+	fclose(fp);
+	return p;
+}
+
+void tensor_save_to_file(const Tensor * p, const char * filePath) {
+	FILE * fp = fopen(filePath, "w");
+	int32_t len = 1;
+	fprintf(fp, "%" PRId32 " ", p->dim);
+	for (int32_t i = 0; i < p->dim; ++i) {
+		fprintf(fp, "%" PRId32 " ", p->shape[i]);
+		len *= p->shape[i];
+	}
+	fprintf(fp, "\n");
+	for (int32_t i = 0; i < len; ++i) {
+		fprintf(fp, "%f ", p->data[i]);
+	}
+	fclose(fp);
+}
+
+// ------------ tensor layers ------------
 /**
  * @brief relu
  */
