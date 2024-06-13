@@ -15,6 +15,7 @@ Usage:
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "tensor.h"
 #include "see.h"
@@ -242,7 +243,10 @@ int main(int argc, char const ** argv) {
 	init(argc, argv);
 
 	alex_net_gen_data(g_seed, g_n);
+	clock_t st = time(NULL);
 	alex_net_infer(g_n);
+	clock_t ed = time(NULL);
+	printf("%f sec used.\n", difftime(ed, st));
 
 	dump_feat(workspace);
 
