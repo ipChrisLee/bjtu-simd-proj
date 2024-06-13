@@ -23,6 +23,10 @@ add_executable(alex-net-std)
 target_sources(alex-net-std PRIVATE exe/alex-net.c)
 target_link_libraries(alex-net-std PUBLIC clib-std)
 
+add_executable(tensor-diff)
+target_sources(tensor-diff PRIVATE exe/tensor-diff.c)
+target_link_libraries(tensor-diff PUBLIC clib-std)
+
 if(DEFINED ENV{onQemu} OR DEFINED ENV{onArm}) 
     add_library(clib-simd)
     target_include_directories(clib-simd PUBLIC clib/include)

@@ -1,3 +1,7 @@
+if [ -z "$envSourced" ]; then
+
+export envSourced=y
+
 if [ ! -f "utils/anchor" ] || [ "$(head -1 utils/anchor)" != "utils | bjtu-simd-dev-code" ]; then echo "Anchor [utils] not found!"; exit 1; fi
 
 if [ -f "${HOME}/.local/bin/cmake" ]; then
@@ -12,6 +16,12 @@ else
     export PATH="$PATH:$(pwd)/build-debug"
 fi
 
+export alexNetStdWorkspace="$(pwd)/workspace-alex-net/std"
+export alexNetSimdWorkspace="$(pwd)/workspace-alex-net/simd"
+mkdir -p "$alexNetStdWorkspace"
+mkdir -p "$alexNetSimdWorkspace"
+
+fi # if [ -z "$envSourced" ]; then
 
 # if (onQemu)
 #   build: "-dev" with toolchain.cmake
