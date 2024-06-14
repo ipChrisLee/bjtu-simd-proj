@@ -31,6 +31,19 @@ static inline int32_t max_i32(int32_t a, int32_t b) {
 	}
 }
 
+// *p = max(*p, zero)
+void neon_max_self_zero(const float * pSrc, float * pDst) {
+	asm volatile(
+		"ld1 {v0.4s}, [%0]\n"
+		"sub v1.4s, v1.4s, v1.4s\n"
+		"fmaxnm v0.4s, v0.4s, v1.4s\n"
+		"st1 {v0.4s}, [%1]\n"
+		:                     // No output operands
+		: "r"(pSrc), "r"(pDst)// Input operands: pointers to a, b, c
+		: "v0", "v1", "v5"    // Clobbered registers
+	);
+}
+
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -79,10 +92,14 @@ void tensor_relu(Tensor * dst, const Tensor * src) {
 	tensor_relu_check(dst, src);
 	const int32_t Len = tensor_get_len(src);
 	float32x4_t zero = vdupq_n_f32(0.0f);
-	for (int32_t i = 0; i + 4 <= Len; i += 4) {
-		float32x4_t v = vld1q_f32(src->data + i);
-		v = vmaxnmq_f32(v, zero);
-		vst1q_f32(dst->data + i, v);
+
+	const float * srcValPtr = src->data;
+	float * dstValPtr = dst->data;
+	for (int32_t i = 0; i + 4 <= Len; i += 4, srcValPtr += 4, dstValPtr += 4) {
+		// float32x4_t srcVal = vld1q_f32(srcValPtr);
+		// float32x4_t dstVal = vmaxnmq_f32(srcVal, zero);
+		// vst1q_f32(dstValPtr, dstVal);
+		neon_max_self_zero(srcValPtr, dstValPtr);
 	}
 	for (int32_t i = r4(Len); i < Len; ++i) {
 		float v = src->data[i];
