@@ -266,6 +266,7 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 		}
 	} else {
 		const float PAD_VAL = -FLT_MAX;
+		float * dstValPtr = dst->data;
 		for (int32_t n = 0; n < N; ++n) {
 			for (int32_t c = 0; c < C; ++c) {
 				for (int32_t h = 0; h < H_OUT; ++h) {
@@ -277,8 +278,8 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 								maxVal = fmaxf(maxVal, tensor_get_or_default_const(src, IND_SRC, PAD_VAL));
 							}
 						}
-						const int32_t IND_DST[MAX_DIM] = {n, c, h, w};
-						*tensor_access(dst, IND_DST) = maxVal;
+						*dstValPtr = maxVal;
+						++dstValPtr;
 					}
 				}
 			}
