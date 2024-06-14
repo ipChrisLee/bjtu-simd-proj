@@ -120,21 +120,22 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 	const int32_t W_OUT = dst->shape[3];
 	const float Pad_Val = 0;
 	const float32x4_t Pad_Val_Vec = vdupq_n_f32(Pad_Val);
+	const float32x4_t Zero_Val_Vec = vdupq_n_f32(0.0f);
 	if (stride[0] == 1 && stride[1] == 1) {
+		const int32_t Ker_Batch_Step = kernel->shape[1] * kernel->shape[2] * kernel->shape[3];
 		float * dstValPtr = dst->data;
 		for (int32_t b = 0; b < N; ++b) {
 			for (int32_t oc = 0; oc < C_OUT; ++oc) {
 				for (int32_t h = 0; h < H_OUT; ++h) {
 					for (int32_t w = 0; w < W_OUT; ++w) {
 						// cross-correlation
-						const int32_t IND_KER[MAX_DIM] = {oc, 0, 0, 0};
-						const float * kerValPtr = tensor_access_const(kernel, IND_KER);
+						const float * kerValPtr = kernel->data + (oc * Ker_Batch_Step);
 
 						float s = 0;
 						for (int32_t ic = 0; ic < C_IN; ++ic) {
 							int32_t hKer = 0;
 							for (; hKer < H_KER && h + hKer - padding[0] < 0; ++hKer) {
-								float32x4_t vs = vdupq_n_f32(0.0f);
+								float32x4_t vs = Zero_Val_Vec;
 								for (int32_t wKer = 0; wKer + 4 <= W_KER; wKer += 4, kerValPtr += 4) {
 									float32x4_t vKer = vld1q_f32(kerValPtr);
 									float32x4_t mulRes = vmulxq_f32(vKer, Pad_Val_Vec);
@@ -158,7 +159,7 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 								{
 									const int32_t IND_SRC[MAX_DIM] = {b, ic, h + hKer - padding[0], w + wKer - padding[1]};
 									const float * srcValPtr = tensor_access_const(src, IND_SRC);
-									float32x4_t sv = vdupq_n_f32(0.0f);
+									float32x4_t sv = Zero_Val_Vec;
 									for (; wKer + 4 <= W_KER && w + wKer - padding[1] + 4 <= W_IN; wKer += 4, kerValPtr += 4, srcValPtr += 4) {
 										float32x4_t vSrc = vld1q_f32(srcValPtr);
 										float32x4_t vKer = vld1q_f32(kerValPtr);
@@ -180,7 +181,7 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 								}
 							}
 							for (; hKer < H_KER; ++hKer) {
-								float32x4_t vs = vdupq_n_f32(0.0f);
+								float32x4_t vs = Zero_Val_Vec;
 								for (int32_t wKer = 0; wKer + 4 <= W_KER; wKer += 4, kerValPtr += 4) {
 									float32x4_t vKer = vld1q_f32(kerValPtr);
 									float32x4_t mulRes = vmulxq_f32(vKer, Pad_Val_Vec);

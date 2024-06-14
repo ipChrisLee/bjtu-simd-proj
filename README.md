@@ -77,5 +77,5 @@ This container has installed qemu, so you can run compiled executable file direc
 * After simd maxpool2d: 6s => 5s
 
 Compare with standard version and simd version (compiled in Release mode) for one batch alex net infer: 
-* in kunpeng 920: (11 sec 231 ms) => (5 sec 901 ms).
+* in kunpeng 920: (11 sec 261 ms) => (4 sec 170 ms).
 * in macOS M2 Pro: (4 sec 436 ms) => (1 sec 712 ms).
