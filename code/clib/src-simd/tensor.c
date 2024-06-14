@@ -23,6 +23,14 @@ static inline float reduce_max(float32x4_t f) {
 	return vget_lane_f32(vpmax_f32(r, r), 0);
 }
 
+static inline int32_t max_i32(int32_t a, int32_t b) {
+	if (a < b) {
+		return b;
+	} else {
+		return a;
+	}
+}
+
 Tensor * tensor_new(int32_t dim, const int32_t shape[MAX_DIM]) {
 	size_t memToUse = sizeof(Tensor) + sizeof(float) * (size_t) get_len_from_shape(dim, shape);
 	Tensor * p = malloc(memToUse);
@@ -229,20 +237,49 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 	const int32_t W_IN = src->shape[3];
 	const int32_t H_KER = kernelSize[0];
 	const int32_t W_KER = kernelSize[1];
-	const float PAD_VAL = -FLT_MAX;
-	for (int32_t i = 0; i < N; ++i) {
-		for (int32_t j = 0; j < C; ++j) {
-			for (int32_t h = 0; h < H_OUT; ++h) {
-				for (int32_t w = 0; w < W_OUT; ++w) {
-					float maxVal = -FLT_MAX;
-					for (int32_t m = 0; m < H_KER; ++m) {
-						for (int32_t n = 0; n < W_KER; ++n) {
-							const int32_t IND_SRC[MAX_DIM] = {i, j, stride[0] * h + m - padding[0], stride[1] * w + n - padding[0]};
-							maxVal = fmaxf(maxVal, tensor_get_or_default_const(src, IND_SRC, PAD_VAL));
+	if (stride[0] == 1 && stride[1] == 1) {
+		float * dstValPtr = dst->data;
+		for (int32_t n = 0; n < N; ++n) {
+			for (int32_t c = 0; c < C; ++c) {
+				for (int32_t h = 0; h < H_OUT; ++h) {
+					for (int32_t w = 0; w < W_OUT; ++w) {
+						float maxVal = -FLT_MAX;
+						for (int32_t hKer = max_i32(0, padding[0] - h); hKer < H_KER && h + hKer - padding[0] < H_IN; ++hKer) {
+							int32_t wKer = max_i32(0, padding[1] - w);
+							const int32_t IND_SRC[MAX_DIM] = {n, c, h + hKer - padding[0], w + wKer - padding[1]};
+							const float * srcValPtr = tensor_access_const(src, IND_SRC);
+							float32x4_t maxValVec = vdupq_n_f32(-FLT_MAX);
+							for (; wKer + 4 <= W_KER && w + wKer - padding[1] + 4 <= W_IN; wKer += 4, srcValPtr += 4) {
+								float32x4_t vSrc = vld1q_f32(srcValPtr);
+								maxValVec = vmaxnmq_f32(vSrc, vSrc);
+							}
+							maxVal = fmaxf(maxVal, reduce_max(maxValVec));
+							for (; wKer < W_KER && w + wKer - padding[1] < W_IN; ++wKer, ++srcValPtr) {
+								maxVal = fmaxf(maxVal, *srcValPtr);
+							}
 						}
+						*(dstValPtr) = maxVal;
+						++dstValPtr;
 					}
-					const int32_t IND_DST[MAX_DIM] = {i, j, h, w};
-					*tensor_access(dst, IND_DST) = maxVal;
+				}
+			}
+		}
+	} else {
+		const float PAD_VAL = -FLT_MAX;
+		for (int32_t n = 0; n < N; ++n) {
+			for (int32_t c = 0; c < C; ++c) {
+				for (int32_t h = 0; h < H_OUT; ++h) {
+					for (int32_t w = 0; w < W_OUT; ++w) {
+						float maxVal = -FLT_MAX;
+						for (int32_t hKer = 0; hKer < H_KER; ++hKer) {
+							for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+								const int32_t IND_SRC[MAX_DIM] = {n, c, stride[0] * h + hKer - padding[0], stride[1] * w + wKer - padding[1]};
+								maxVal = fmaxf(maxVal, tensor_get_or_default_const(src, IND_SRC, PAD_VAL));
+							}
+						}
+						const int32_t IND_DST[MAX_DIM] = {n, c, h, w};
+						*tensor_access(dst, IND_DST) = maxVal;
+					}
 				}
 			}
 		}
