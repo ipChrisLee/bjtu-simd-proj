@@ -30,13 +30,12 @@ int main(int argc, char const ** argv) {
 	else if (strcmp(layerName, #layer) == 0) { concat(test_, layer)(result, tInfo); }
 
 	// clang-format off
-	if(false){
-
-	}
+	if(false){ }
 	layer_case(relu)
 	layer_case(softmax)
 	layer_case(conv2d)
 	layer_case(fc)
+	layer_case(maxpool2d)
 	else {
 		printf(RED "Unsupported layer %s\n" NC, layerName);
 		exit(EXIT_FAILURE);

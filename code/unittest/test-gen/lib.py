@@ -48,6 +48,7 @@ def dump(
         goldenDst: np.ndarray | None = None,
         kernel: np.ndarray | None = None,
         weight: np.ndarray | None = None,
+        kernelSize: typ.List[int] | None = None,
         padding: typ.List[int] | None = None,
         stride: typ.List[int] | None = None,
         axis: int | None = None,
@@ -62,6 +63,7 @@ def dump(
     _write_axis(fp, axis)
     _write_tol(fp, "rtol", rtol)
     _write_tol(fp, "atol", atol)
+    _write_intarr("kernelSize", fp, kernelSize)
     _write_intarr("padding", fp, padding)
     _write_intarr("stride", fp, stride)
     fp.write("end\n")
