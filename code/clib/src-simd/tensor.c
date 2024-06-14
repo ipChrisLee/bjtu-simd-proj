@@ -111,6 +111,7 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 	const int32_t H_OUT = dst->shape[2];
 	const int32_t W_OUT = dst->shape[3];
 	const float Pad_Val = 0;
+	const float32x4_t Pad_Val_Vec = vdupq_n_f32(Pad_Val);
 	if (stride[0] == 1 && stride[1] == 1) {
 		float * dstValPtr = dst->data;
 		for (int32_t b = 0; b < N; ++b) {
@@ -125,37 +126,62 @@ void tensor_conv2d(Tensor * dst, const Tensor * src, const Tensor * kernel, cons
 						for (int32_t ic = 0; ic < C_IN; ++ic) {
 							int32_t hKer = 0;
 							for (; hKer < H_KER && h + hKer - padding[0] < 0; ++hKer) {
-								for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+								float32x4_t vs = vdupq_n_f32(0.0f);
+								for (int32_t wKer = 0; wKer + 4 <= W_KER; wKer += 4, kerValPtr += 4) {
+									float32x4_t vKer = vld1q_f32(kerValPtr);
+									float32x4_t mulRes = vmulxq_f32(vKer, Pad_Val_Vec);
+									vs = vaddq_f32(vs, mulRes);
+								}
+								s += reduce_sum(vs);
+								for (int32_t wKer = r4(W_KER); wKer < W_KER; ++wKer, ++kerValPtr) {
 									float vSrc = Pad_Val;
-									float vKer = *(kerValPtr++);
+									float vKer = *kerValPtr;
 									s += vSrc * vKer;
 								}
 							}
 							for (; hKer < H_KER && h + hKer - padding[0] < H_IN; ++hKer) {
 								int32_t wKer = 0;
-								for (; wKer < W_KER && w + wKer - padding[1] < 0; ++wKer) {
+								for (; wKer < W_KER && w + wKer - padding[1] < 0; ++wKer, ++kerValPtr) {
 									// left padded {w+wKer-padding[1]<0}
 									float vSrc = Pad_Val;
-									float vKer = *(kerValPtr++);
+									float vKer = *kerValPtr;
 									s += vSrc * vKer;
 								}
-								for (; wKer < W_KER && w + wKer - padding[1] < W_IN; ++wKer) {
+								{
 									const int32_t IND_SRC[MAX_DIM] = {b, ic, h + hKer - padding[0], w + wKer - padding[1]};
-									float vSrc = *tensor_access_const(src, IND_SRC);
-									float vKer = *(kerValPtr++);
-									s += vSrc * vKer;
+									const float * srcValPtr = tensor_access_const(src, IND_SRC);
+									float32x4_t sv = vdupq_n_f32(0.0f);
+									for (; wKer + 4 <= W_KER && w + wKer - padding[1] + 4 <= W_IN; wKer += 4, kerValPtr += 4, srcValPtr += 4) {
+										float32x4_t vSrc = vld1q_f32(srcValPtr);
+										float32x4_t vKer = vld1q_f32(kerValPtr);
+										float32x4_t mulRes = vmulxq_f32(vSrc, vKer);
+										sv = vaddq_f32(sv, mulRes);
+									}
+									s += reduce_sum(sv);
+									for (; wKer < W_KER && w + wKer - padding[1] < W_IN; ++wKer, ++kerValPtr, ++srcValPtr) {
+										float vSrc = *srcValPtr;
+										float vKer = *kerValPtr;
+										s += vSrc * vKer;
+									}
 								}
-								for (; wKer < W_KER; ++wKer) {
+								for (; wKer < W_KER; ++wKer, ++kerValPtr) {
 									// right padding if any.
 									float vSrc = Pad_Val;
-									float vKer = *(kerValPtr++);
+									float vKer = *kerValPtr;
 									s += vSrc * vKer;
 								}
 							}
 							for (; hKer < H_KER; ++hKer) {
-								for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+								float32x4_t vs = vdupq_n_f32(0.0f);
+								for (int32_t wKer = 0; wKer + 4 <= W_KER; wKer += 4, kerValPtr += 4) {
+									float32x4_t vKer = vld1q_f32(kerValPtr);
+									float32x4_t mulRes = vmulxq_f32(vKer, Pad_Val_Vec);
+									vs = vaddq_f32(vs, mulRes);
+								}
+								s += reduce_sum(vs);
+								for (int32_t wKer = r4(W_KER); wKer < W_KER; ++wKer, ++kerValPtr) {
 									float vSrc = Pad_Val;
-									float vKer = *(kerValPtr++);
+									float vKer = *kerValPtr;
 									s += vSrc * vKer;
 								}
 							}
