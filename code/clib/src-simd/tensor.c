@@ -229,12 +229,12 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 	const int32_t W_IN = src->shape[3];
 	const int32_t H_KER = kernelSize[0];
 	const int32_t W_KER = kernelSize[1];
-	const float PAD_VAL = FLT_MIN;
+	const float PAD_VAL = -FLT_MAX;
 	for (int32_t i = 0; i < N; ++i) {
 		for (int32_t j = 0; j < C; ++j) {
 			for (int32_t h = 0; h < H_OUT; ++h) {
 				for (int32_t w = 0; w < W_OUT; ++w) {
-					float maxVal = FLT_MIN;
+					float maxVal = -FLT_MAX;
 					for (int32_t m = 0; m < H_KER; ++m) {
 						for (int32_t n = 0; n < W_KER; ++n) {
 							const int32_t IND_SRC[MAX_DIM] = {i, j, stride[0] * h + m - padding[0], stride[1] * w + n - padding[0]};
@@ -257,7 +257,7 @@ static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray
 			float * dstValPtrBase = tensor_access(dst, curIndex);
 			float * dstValPtr;
 
-			float32x4_t maxValVec = vdupq_n_f32(FLT_MIN);
+			float32x4_t maxValVec = vdupq_n_f32(-FLT_MAX);
 			dstValPtr = dstValPtrBase;
 			for (int32_t i = 0; i + 4 <= L; i += 4, dstValPtr += 4) {
 				float32x4_t v = vld1q_f32(dstValPtr);
@@ -291,7 +291,7 @@ static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray
 				*dstValPtr = v;
 			}
 		} else {
-			float maxVal = FLT_MIN;
+			float maxVal = -FLT_MAX;
 			for (int32_t i = 0; i < dst->shape[axis]; ++i) {
 				curIndex[axis] = i;
 				float v = *tensor_access_const(dst, curIndex);

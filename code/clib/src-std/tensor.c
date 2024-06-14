@@ -119,19 +119,19 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 	const int32_t W_IN = src->shape[3];
 	const int32_t H_KER = kernelSize[0];
 	const int32_t W_KER = kernelSize[1];
-	const float PAD_VAL = FLT_MIN;
-	for (int32_t i = 0; i < N; ++i) {
-		for (int32_t j = 0; j < C; ++j) {
+	const float PAD_VAL = -FLT_MAX;
+	for (int32_t n = 0; n < N; ++n) {
+		for (int32_t c = 0; c < C; ++c) {
 			for (int32_t h = 0; h < H_OUT; ++h) {
 				for (int32_t w = 0; w < W_OUT; ++w) {
-					float maxVal = FLT_MIN;
-					for (int32_t m = 0; m < H_KER; ++m) {
-						for (int32_t n = 0; n < W_KER; ++n) {
-							const int32_t IND_SRC[MAX_DIM] = {i, j, stride[0] * h + m - padding[0], stride[1] * w + n - padding[0]};
+					float maxVal = -FLT_MAX;
+					for (int32_t hKer = 0; hKer < H_KER; ++hKer) {
+						for (int32_t wKer = 0; wKer < W_KER; ++wKer) {
+							const int32_t IND_SRC[MAX_DIM] = {n, c, h * stride[0] + hKer - padding[0], w * stride[1] + wKer - padding[1]};
 							maxVal = fmaxf(maxVal, tensor_get_or_default_const(src, IND_SRC, PAD_VAL));
 						}
 					}
-					const int32_t IND_DST[MAX_DIM] = {i, j, h, w};
+					const int32_t IND_DST[MAX_DIM] = {n, c, h, w};
 					*tensor_access(dst, IND_DST) = maxVal;
 				}
 			}
@@ -141,7 +141,7 @@ void tensor_maxpool2d(Tensor * dst, const Tensor * src, const int32_t kernelSize
 
 static void dfs_for_softmax(Tensor * dst, int32_t curDim, int32_t axis, DimArray curIndex) {
 	if (curDim == dst->dim) {
-		float maxVal = FLT_MIN;
+		float maxVal = -FLT_MAX;
 		for (int32_t i = 0; i < dst->shape[axis]; ++i) {
 			curIndex[axis] = i;
 			float v = *tensor_access_const(dst, curIndex);
