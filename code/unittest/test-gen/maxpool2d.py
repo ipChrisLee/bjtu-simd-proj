@@ -12,7 +12,10 @@ def gen_maxpool2d(tInfoPath: Path):
     src = lib.gen_uniform_tensor(srcShape, (-1.0, 1.0))
     kernelSize = lib.gen_random_dim_array(2, l=4, r=6)
     padding = lib.gen_random_dim_array(2, l=0, r=3)
-    stride = lib.gen_random_dim_array(2, l=1, r=4)
+    if lib.gen_uniform_bool():
+        stride = lib.gen_random_dim_array(2, l=1, r=4)
+    else:
+        stride = [1, 1]
     goldenDst = torch.max_pool2d(input=torch.tensor(
         src), kernel_size=kernelSize, padding=padding, stride=stride).numpy()
     lib.dump(tInfoPath=tInfoPath, src=src, kernelSize=kernelSize,
