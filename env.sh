@@ -30,7 +30,7 @@ function true_ssh() {
 
 function true_scp() {
 	if [ -z "$proxyJump" ]; then
-		scp "$remote" "$@"
+		scp "$@"
 	else
 		scp -o "ProxyJump=$proxyJump" "$@"
 	fi
