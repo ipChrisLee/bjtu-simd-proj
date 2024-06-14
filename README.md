@@ -73,3 +73,4 @@ This container has installed qemu, so you can run compiled executable file direc
 * After simd relu: 12s => 12s
 * After simd fc: 12s => 11s
 * After simd softmax: 11s => 11s
+* After simd conv2d: 11s => 6s
