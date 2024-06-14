@@ -267,10 +267,14 @@ int main(int argc, char const ** argv) {
 	init(argc, argv);
 
 	alex_net_gen_data(g_seed, g_n);
-	clock_t st = time(NULL);
+
+
+	clock_t start = clock(), diff;
 	alex_net_infer(g_n);
-	clock_t ed = time(NULL);
-	printf("%f sec used.\n", difftime(ed, st));
+	diff = clock() - start;
+
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+	printf("Time cost: %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
 	dump_feat(workspace);
 
