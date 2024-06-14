@@ -74,3 +74,8 @@ This container has installed qemu, so you can run compiled executable file direc
 * After simd fc: 12s => 11s
 * After simd softmax: 11s => 11s
 * After simd conv2d: 11s => 6s
+* After simd maxpool2d: 6s => 5s
+
+Compare with standard version and simd version (compiled in Release mode) for one batch alex net infer: 
+* in kunpeng 920: (11 sec 231 ms) => (5 sec 901 ms).
+* in macOS M2 Pro: (4 sec 436 ms) => (1 sec 712 ms).
